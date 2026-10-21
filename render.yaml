@@ -1,0 +1,24 @@
+databases:
+  - name: buro-startapov-db
+    databaseName: buro_startapov
+    user: buro_startapov
+    plan: free
+    region: oregon
+    postgresMajorVersion: "18"
+
+services:
+  - type: web
+    name: buro-startapov-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: corepack pnpm install --frozen-lockfile
+    startCommand: node render-server.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: buro-startapov-db
+          property: connectionString
+      - key: NODE_VERSION
+        value: "22"

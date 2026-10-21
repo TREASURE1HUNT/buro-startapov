@@ -11,18 +11,11 @@ importers:
       '@netlify/blobs':
         specifier: ^11.1.5
         version: 11.1.5
-      '@netlify/database':
-        specifier: ^2.0.1
-        version: 2.0.1
-    devDependencies:
-      '@netlify/database-dev':
-        specifier: ^1.0.1
-        version: 1.0.1
+      pg:
+        specifier: 8.16.3
+        version: 8.16.3
 
 packages:
-
-  '@electric-sql/pglite@0.3.16':
-    resolution: {integrity: sha512-mZkZfOd9OqTMHsK+1cje8OSzfAQcpD7JmILXTl5ahdempjUDdmg4euf1biDex5/LfQIDJ3gvCu6qDgdnDxfJmA==}
 
   '@envelop/instrumentation@1.0.1':
     resolution: {integrity: sha512-FuexE2qd3Yc1Kh1DjTliwGxb9kyyv4ySBNnfJOxnQasVmGdcqX6AkkO5sIMxLWFRftp8PErOcIn2dQW/1RwytQ==}
@@ -31,20 +24,8 @@ packages:
   '@fastify/busboy@3.2.3':
     resolution: {integrity: sha512-fmo/IKgkenPzz3qTKG+sIUXdF/Kv83AkvvOXJHPTHJeKJbat8SsL1ihUaFaDotqoEl4UZ1Lf8Eb/3vK6eaWX2A==}
 
-  '@neondatabase/serverless@1.2.0':
-    resolution: {integrity: sha512-tnaqgixUengZQNd9ZrS3ytQfamJzLKY8QxgqWQTNHHtB+KrFQWk77JTbbpg4RD+J3qE4eO2lVytvGDX5Kj6FdQ==}
-    engines: {node: '>=19.0.0'}
-
   '@netlify/blobs@11.1.5':
     resolution: {integrity: sha512-nyuLyRn9iZKffWA3A+KkAw9lqitwNKHZGV9MDRtGoay6NOqspAYaj0JXU5+Wofv6CcmVoA72D+veaXfryOd3ZA==}
-    engines: {node: '>=22.12.0'}
-
-  '@netlify/database-dev@1.0.1':
-    resolution: {integrity: sha512-Zu8cM4AeXNuQI/cNAI6vrammtdDnWIGO6PYKDAECDMzsb3IcoTsVOZAePup7cGdjaGcBBVdi1qx/PoI5hNZcxg==}
-    engines: {node: '>=22.12.0'}
-
-  '@netlify/database@2.0.1':
-    resolution: {integrity: sha512-ikz0NcVgeOe62Sic5MEFMyv/yMWtzhMLcynXTDftTL3rVEMoJL16mjnU9gNZ6G80lBngjjPjZrDOyAS1j+Kt3A==}
     engines: {node: '>=22.12.0'}
 
   '@netlify/dev-utils@6.0.4':
@@ -202,9 +183,6 @@ packages:
   pg-connection-string@2.14.1:
     resolution: {integrity: sha512-qR3kGNPBLpCNtz0evbKA0Y/MRFXwSSdT+pTJvYp/bXTcReZbvX1kzF0IyTc1QnxqF7AZbOeBhNL8R5mYQZV/MA==}
 
-  pg-gateway@0.3.0-beta.4:
-    resolution: {integrity: sha512-CTjsM7Z+0Nx2/dyZ6r8zRsc3f9FScoD5UAOlfUx1Fdv/JOIWvRbF7gou6l6vP+uypXQVoYPgw8xZDXgMGvBa4Q==}
-
   pg-int8@1.0.1:
     resolution: {integrity: sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==}
     engines: {node: '>=4.0.0'}
@@ -221,8 +199,8 @@ packages:
     resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
     engines: {node: '>=4'}
 
-  pg@8.23.1:
-    resolution: {integrity: sha512-aL96AHANtWjPLDOLqnhx+ngp9+UK7ETEU8VJrDCGvsSSi/mGLcWYsS6Herg7lmaBJe4uwrfqsa7gTEFaSizDoQ==}
+  pg@8.16.3:
+    resolution: {integrity: sha512-enxc1h0jA/aq5oSDMvqyW3q89ra6XIIDZgCX9vkMrnz5DFTw/Ny3Li2lFQ+pt3L6MCgm/5o2o8HW9hiJji+xvw==}
     engines: {node: '>= 16.0.0'}
     peerDependencies:
       pg-native: '>=3.0.1'
@@ -282,93 +260,14 @@ packages:
   urlpattern-polyfill@10.1.0:
     resolution: {integrity: sha512-IGjKp/o0NL3Bso1PymYURCJxMPNAf/ILOpendP9f5B6e1rTJgdgiOvgfoT8VxCAdY+Wisb9uhGaJJf3yZ2V9nw==}
 
-  waddler@0.1.1:
-    resolution: {integrity: sha512-lBJXYFBLEpYe+scAeCJmLj6Iqweuq1whM6Am3I9WfopOCFxvKz8Nq5hXoy8/b3zwJqHIQMglFIvM4skRydSpZg==}
-    peerDependencies:
-      '@clickhouse/client': ^1.11.2
-      '@cloudflare/workers-types': '*'
-      '@duckdb/node-api': ^1.1.2-alpha.4
-      '@electric-sql/pglite': ^0.2.17
-      '@libsql/client': ^0.15.4
-      '@libsql/client-wasm': ^0.15.4
-      '@neondatabase/serverless': ^1.0.0
-      '@op-engineering/op-sqlite': '*'
-      '@planetscale/database': ^1.19.0
-      '@tidbcloud/serverless': ^0.2.0
-      '@vercel/postgres': ^0.10.0
-      '@xata.io/client': ^0.30.1
-      better-sqlite3: ^11.9.1
-      bun-types: '*'
-      duckdb: ^1.2.1
-      gel: ^2.0.2
-      mysql2: ^3.14.0
-      pg: ^8.14.0
-      pg-query-stream: ^4.8.0
-      postgres: ^3.4.5
-    peerDependenciesMeta:
-      '@clickhouse/client':
-        optional: true
-      '@cloudflare/workers-types':
-        optional: true
-      '@duckdb/node-api':
-        optional: true
-      '@electric-sql/pglite':
-        optional: true
-      '@libsql/client':
-        optional: true
-      '@libsql/client-wasm':
-        optional: true
-      '@neondatabase/serverless':
-        optional: true
-      '@op-engineering/op-sqlite':
-        optional: true
-      '@planetscale/database':
-        optional: true
-      '@tidbcloud/serverless':
-        optional: true
-      '@vercel/postgres':
-        optional: true
-      '@xata.io/client':
-        optional: true
-      better-sqlite3:
-        optional: true
-      bun-types:
-        optional: true
-      duckdb:
-        optional: true
-      gel:
-        optional: true
-      mysql2:
-        optional: true
-      pg:
-        optional: true
-      pg-query-stream:
-        optional: true
-      postgres:
-        optional: true
-
   when-exit@2.1.5:
     resolution: {integrity: sha512-VGkKJ564kzt6Ms1dbgPP/yuIoQCrsFAnRbptpC5wOEsDaNsbCB2bnfnaA8i/vRs5tjUSEOtIuvl9/MyVsvQZCg==}
-
-  ws@8.22.0:
-    resolution: {integrity: sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
 
   xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
 
 snapshots:
-
-  '@electric-sql/pglite@0.3.16': {}
 
   '@envelop/instrumentation@1.0.1':
     dependencies:
@@ -377,8 +276,6 @@ snapshots:
 
   '@fastify/busboy@3.2.3': {}
 
-  '@neondatabase/serverless@1.2.0': {}
-
   '@netlify/blobs@11.1.5':
     dependencies:
       '@netlify/dev-utils': 6.0.4
@@ -386,41 +283,6 @@ snapshots:
       '@netlify/runtime-utils': 3.0.0
     transitivePeerDependencies:
       - supports-color
-
-  '@netlify/database-dev@1.0.1':
-    dependencies:
-      '@electric-sql/pglite': 0.3.16
-      pg-gateway: 0.3.0-beta.4
-
-  '@netlify/database@2.0.1':
-    dependencies:
-      '@neondatabase/serverless': 1.2.0
-      '@netlify/runtime-utils': 3.0.0
-      pg: 8.23.1
-      waddler: 0.1.1(@neondatabase/serverless@1.2.0)(pg@8.23.1)
-      ws: 8.22.0
-    transitivePeerDependencies:
-      - '@clickhouse/client'
-      - '@cloudflare/workers-types'
-      - '@duckdb/node-api'
-      - '@electric-sql/pglite'
-      - '@libsql/client'
-      - '@libsql/client-wasm'
-      - '@op-engineering/op-sqlite'
-      - '@planetscale/database'
-      - '@tidbcloud/serverless'
-      - '@vercel/postgres'
-      - '@xata.io/client'
-      - better-sqlite3
-      - bufferutil
-      - bun-types
-      - duckdb
-      - gel
-      - mysql2
-      - pg-native
-      - pg-query-stream
-      - postgres
-      - utf-8-validate
 
   '@netlify/dev-utils@6.0.4':
     dependencies:
@@ -583,13 +445,11 @@ snapshots:
 
   pg-connection-string@2.14.1: {}
 
-  pg-gateway@0.3.0-beta.4: {}
-
   pg-int8@1.0.1: {}
 
-  pg-pool@3.14.0(pg@8.23.1):
+  pg-pool@3.14.0(pg@8.16.3):
     dependencies:
-      pg: 8.23.1
+      pg: 8.16.3
 
   pg-protocol@1.16.1: {}
 
@@ -601,10 +461,10 @@ snapshots:
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
 
-  pg@8.23.1:
+  pg@8.16.3:
     dependencies:
       pg-connection-string: 2.14.1
-      pg-pool: 3.14.0(pg@8.23.1)
+      pg-pool: 3.14.0(pg@8.16.3)
       pg-protocol: 1.16.1
       pg-types: 2.2.0
       pgpass: 1.0.5
@@ -650,13 +510,6 @@ snapshots:
 
   urlpattern-polyfill@10.1.0: {}
 
-  waddler@0.1.1(@neondatabase/serverless@1.2.0)(pg@8.23.1):
-    optionalDependencies:
-      '@neondatabase/serverless': 1.2.0
-      pg: 8.23.1
-
   when-exit@2.1.5: {}
-
-  ws@8.22.0: {}
 
   xtend@4.0.2: {}

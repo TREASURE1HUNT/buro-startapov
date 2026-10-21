@@ -1,9 +1,6 @@
 {
 	"dependencies": {
 		"@netlify/blobs": "^11.1.5",
-		"@netlify/database": "^2.0.1"
-	},
-	"devDependencies": {
-		"@netlify/database-dev": "^1.0.1"
+		"pg": "8.16.3"
 	}
 }

@@ -1,9 +1,7 @@
 import { createHash, randomBytes, scryptSync, pbkdf2Sync, timingSafeEqual } from 'node:crypto';
-import { getDatabase } from '@netlify/database';
-import { getStore } from '@netlify/blobs';
+import { getDatabase } from '../../render/postgres-adapter.mjs';
 
 const db = getDatabase();
-const legacyVotes = getStore('buro-community-votes', { consistency: 'strong' });
 const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
 const reply = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), { status, headers: { ...headers, ...extra } });
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -33,10 +31,8 @@ async function importState(email, records={}, projects=[]) {
   for(const project of Array.isArray(projects)?projects:[]) if(validProject(project)&&emailOf(project.ownerEmail)===email) await db.sql`INSERT INTO app_projects(id,owner_email,document) VALUES(${String(project.id)},${email},${JSON.stringify(project)}::jsonb) ON CONFLICT(id) DO UPDATE SET document=EXCLUDED.document,updated_at=now() WHERE app_projects.owner_email=EXCLUDED.owner_email`;
 }
 async function importLegacyVotes(projectId) {
-  const existing=await db.sql`SELECT 1 FROM app_votes WHERE project_id=${projectId} LIMIT 1`;
-  if(existing.length)return;
-  const old=await legacyVotes.get(`project:${projectId}`,{type:'json'});
-  for(const [voterKey,vote] of Object.entries(old?.voters||{})) if(/^[a-f0-9]{64}$/i.test(voterKey)&&(vote==='up'||vote==='down')) await db.sql`INSERT INTO app_votes(project_id,voter_key,vote) VALUES(${projectId},${voterKey},${vote}) ON CONFLICT DO NOTHING`;
+  // Legacy Netlify Blobs votes are imported by the explicit data migration before cutover.
+  return projectId;
 }
 function validProject(value) { return value && typeof value === 'object' && /^[\p{L}\p{N}_-]{1,100}$/u.test(String(value.id || '')) && typeof value.name === 'string' && value.name.trim().length > 0; }
 

@@ -19,8 +19,9 @@
 
 [[redirects]]
   from = "/api/database"
-  to = "/.netlify/functions/database"
+  to = "https://buro-startapov-api.onrender.com/api/database"
   status = 200
+  force = true
 
 [[headers]]
   for = "/*"
