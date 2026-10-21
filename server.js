@@ -1,7 +1,7 @@
 'use strict';
 // Minimal local MVP API. API keys and account hashes stay server-side.
 const http=require('node:http');const fs=require('node:fs');const path=require('node:path');const crypto=require('node:crypto');
-const PORT=Number(process.env.PORT||4173);const INFERENCE_BASE=(process.env.INFERENCE_BASE_URL||'https://api.openai.com/v1').replace(/\/$/,'');const MODEL=process.env.INFERENCE_MODEL||process.env.OPENAI_MODEL||'gpt-4.1-mini';const API_KEY=process.env.INFERENCE_API_KEY||process.env.OPENAI_API_KEY;const DB=path.join(__dirname,'data.json');
+const PORT=Number(process.env.PORT||4173);const API_KEY=process.env.INFERENCE_API_KEY||process.env.OPENAI_API_KEY;const IS_DAHL=Boolean(process.env.INFERENCE_API_KEY)||API_KEY?.startsWith('dahl_');const INFERENCE_BASE=(process.env.INFERENCE_BASE_URL||(IS_DAHL?'https://inference.dahl.global/v1':'https://api.openai.com/v1')).replace(/\/$/,'');const MODEL=process.env.INFERENCE_MODEL||process.env.OPENAI_MODEL||(IS_DAHL?'zai-org/GLM-5.3-Flash':'gpt-4.1-mini');const DB=path.join(__dirname,'data.json');
 function send(res,status,data){res.writeHead(status,{'content-type':'application/json; charset=utf-8','access-control-allow-origin':'*','access-control-allow-headers':'content-type,authorization','access-control-allow-methods':'GET,POST,OPTIONS'});res.end(JSON.stringify(data))}
 function readDb(){try{return JSON.parse(fs.readFileSync(DB,'utf8'))}catch{return {users:[],votes:{}}}}
 function saveDb(db){const temp=DB+'.tmp';fs.writeFileSync(temp,JSON.stringify(db,null,2));fs.renameSync(temp,DB)}
