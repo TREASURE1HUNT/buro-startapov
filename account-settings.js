@@ -8,6 +8,9 @@
   const account = read(accountKey, null);
   if (!account) return;
   root.hidden = false;
+  const profileContent=document.querySelector('#profile-content');
+  const ownedProjects=read('buro-startapov-projects-v1',[]).filter(project=>project.ownerEmail===account.email);
+  if(profileContent&&ownedProjects.length){const section=document.createElement('section');section.className='owned-startups';section.innerHTML='<div class="owned-startups-heading"><div><div class="section-index">[ УПРАВЛЕНИЕ ПРОЕКТАМИ ]</div><h2>Мои стартапы<span class="gradient-text">.</span></h2></div><a class="button" href="create.html">Добавить стартап ↗</a></div><div class="owned-startups-list"></div>';const list=section.querySelector('.owned-startups-list');list.innerHTML=ownedProjects.map(project=>{const first=Array.isArray(project.media)?project.media[0]:null;const src=typeof first==='string'?first:first?.src;const video=typeof first==='object'&&first?.type==='video';const cover=src?(video?`<video src="${escape(src)}" muted autoplay loop playsinline></video>`:`<img src="${escape(src)}" alt="">`):'<span>✳</span>';return `<article class="owned-startup-card"><div class="owned-startup-cover">${cover}</div><div class="owned-startup-copy"><span>${escape(project.category||'Стартап')} · ${escape(project.stage||'Идея')}</span><h3>${escape(project.name)}</h3><p>${escape(project.description||project.problem||'')}</p><div class="owned-startup-actions"><a class="button button-outline" href="project.html?id=${encodeURIComponent(project.id)}">Открыть ↗</a><a class="clear-button" href="create.html?edit=${encodeURIComponent(project.id)}">Редактировать</a><button class="clear-button owned-delete" type="button" data-project-id="${escape(project.id)}">Удалить ×</button></div></div></article>`}).join('');list.querySelectorAll('.owned-delete').forEach(button=>button.addEventListener('click',()=>{const target=button.dataset.projectId;if(!confirm('Удалить этот стартап? Это удалит его из профиля и каталога.'))return;const items=read('buro-startapov-projects-v1',[]);const next=items.filter(project=>project.id!==target||project.ownerEmail!==account.email);localStorage.setItem('buro-startapov-projects-v1',JSON.stringify(next));location.reload()}));profileContent.append(section);}
   const roleLabels = { startup: 'Стартапер', investor: 'Инвестор', mentor: 'Наставник' };
   const avatar = account.avatar ? `<img class="account-avatar-preview" src="${escape(account.avatar)}" alt="Фото профиля">` : '<span class="account-avatar-placeholder">✳</span>';
   root.innerHTML = `
@@ -51,9 +54,10 @@
         const index = users.findIndex(user => user.email === oldEmail);
         if (index >= 0) users[index] = { ...users[index], name: updated.name, email: updated.email, role: updated.role, investorFocus: updated.investorFocus, ticketSize: updated.ticketSize, bio: updated.bio, location: updated.location, website: updated.website, contact: updated.contact, avatar: updated.avatar, updatedAt: updated.updatedAt };
         localStorage.setItem(usersKey, JSON.stringify(users));
+        if(oldEmail!==email){const savedKey=`buro-investor-saved-${oldEmail}`,newSavedKey=`buro-investor-saved-${email}`;const saved=read(savedKey,null);if(saved&&!read(newSavedKey,null))localStorage.setItem(newSavedKey,JSON.stringify(saved));if(saved)localStorage.removeItem(savedKey);}
         const projects = read('buro-startapov-projects-v1', []);
         let changed = false;
-        for (const project of projects) if (project.ownerEmail?.toLowerCase() === oldEmail) { project.ownerEmail = email; changed = true; }
+        for (const project of projects) if (project.ownerEmail?.toLowerCase() === oldEmail) { project.ownerEmail = email; project.ownerName = updated.name; changed = true; }
         if (changed) localStorage.setItem('buro-startapov-projects-v1', JSON.stringify(projects));
         result.textContent = 'Профиль сохранён. Данные аккаунта и связанные проекты обновлены.';
         result.dataset.state = 'success';
