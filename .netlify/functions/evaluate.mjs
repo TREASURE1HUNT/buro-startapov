@@ -21,15 +21,17 @@ export default async function handler(req) {
   try { input = await req.json(); } catch { return error('Некорректный JSON.', 400); }
   const project = Object.fromEntries(['name', 'category', 'stage', 'problem', 'audience', 'value', 'description', 'businessModel', 'markets', 'technologies', 'fundingAsk', 'fundingCurrency', 'fundingGoal', 'teamName', 'teamResponsibility', 'news'].map(key => [key, clampText(input[key])]));
   for (const field of ['name', 'category', 'stage', 'problem', 'audience', 'value']) if (!project[field]) return error('Заполните название, направление, стадию, проблему, аудиторию и ценность проекта.', 400);
-  const criterionShape = Object.fromEntries(rubric.map(([key]) => [key, { score: 0, evidence: '', gap: '' }]));
-  const system = `Ты — аналитик ранних стартапов. Оценивай ТОЛЬКО данные из карточки, не придумывай рынок, клиентов, выручку, конкурентов или результаты. Если подтверждений нет, прямо укажи «не представлено» и снижай demand/evidence. Отличай проверенный факт от заявления команды. Верни ТОЛЬКО корректный JSON без markdown по схеме: {"criteria":${JSON.stringify(criterionShape)},"strengths":["..."],"risks":["..."],"next_steps":["..."],"missing_evidence":["..."],"summary":"..."}. В каждом критерии score — целое 0..100; evidence — что конкретно найдено в описании, gap — чего не хватает. strengths/risks/next_steps/missing_evidence — от 1 до 4 коротких пунктов, все предметные и привязанные к карточке. Если данных мало, не заполняй пробелы оптимистичными допущениями. Ответ на русском.`;
+  
+  const system = `Ты — аналитик стартапов. Оценивай только данные карточки; не придумывай рынок, клиентов, выручку и результаты. Отмечай отсутствие доказательств и отличай заявление от подтверждённого результата. Верни только корректный JSON без markdown по форме: {"criteria":{"problem":{"score":0,"evidence":"","gap":""},"demand":{"score":0,"evidence":"","gap":""},"customer":{"score":0,"evidence":"","gap":""},"solution":{"score":0,"evidence":"","gap":""},"business":{"score":0,"evidence":"","gap":""},"execution":{"score":0,"evidence":"","gap":""}},"strengths":[""],"risks":[""],"next_steps":[""],"missing_evidence":[""],"summary":""}. Оценки — целые 0..100; evidence/gap и списки — короткие, конкретные, по-русски.`;
   try {
     const response = await fetch(`${base}/chat/completions`, {
       method: 'POST',
       headers: { authorization: `Bearer ${configuredKey}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ model, temperature: 0.1, max_tokens: 1800, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: JSON.stringify(project) }] }),
+      body: JSON.stringify({ model, temperature: 0.1, max_tokens: 4000, chat_template_kwargs: { enable_thinking: false }, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: JSON.stringify(project) }] }),
     });
-    const data = await response.json();
+    const rawResponse = await response.text();
+    let data;
+    try { data = JSON.parse(rawResponse); } catch { return error('Inference API вернул пустой или некорректный ответ.', 502); }
     if (!response.ok) return error(data.error?.message || 'Ошибка inference API', 502);
     const raw = data.choices?.[0]?.message?.content || '';
     const result = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, ''));
