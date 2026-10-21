@@ -31,8 +31,23 @@ async function importState(email, records={}, projects=[]) {
   for(const project of Array.isArray(projects)?projects:[]) if(validProject(project)&&emailOf(project.ownerEmail)===email) await db.sql`INSERT INTO app_projects(id,owner_email,document) VALUES(${String(project.id)},${email},${JSON.stringify(project)}::jsonb) ON CONFLICT(id) DO UPDATE SET document=EXCLUDED.document,updated_at=now() WHERE app_projects.owner_email=EXCLUDED.owner_email`;
 }
 async function importLegacyVotes(projectId) {
-  // Legacy Netlify Blobs votes are imported by the explicit data migration before cutover.
-  return projectId;
+  const existing = await db.sql`SELECT 1 FROM app_votes WHERE project_id=${projectId} LIMIT 1`;
+  if (existing.length) return;
+  try {
+    const response = await fetch('https://buro-startapov.netlify.app/api/community-votes', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectId, browserId: `render-migration-${projectId}` }),
+    });
+    if (!response.ok) return;
+    const tally = await response.json();
+    for (const [type, count] of [['up', tally.up], ['down', tally.down]]) {
+      const amount = Math.max(0, Math.min(10000, Number(count) || 0));
+      for (let i = 1; i <= amount; i++) {
+        const voterKey = hash(`legacy:${projectId}:${type}:${i}`);
+        await db.sql`INSERT INTO app_votes(project_id,voter_key,vote) VALUES(${projectId},${voterKey},${type}) ON CONFLICT DO NOTHING`;
+      }
+    }
+  } catch { /* A missing legacy Netlify vote does not block the Render-backed app. */ }
 }
 function validProject(value) { return value && typeof value === 'object' && /^[\p{L}\p{N}_-]{1,100}$/u.test(String(value.id || '')) && typeof value.name === 'string' && value.name.trim().length > 0; }
 
