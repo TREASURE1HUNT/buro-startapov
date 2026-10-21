@@ -4,6 +4,8 @@
 data.json
 data.json.tmp
 node_modules/
+.deliverables/
+deliverables/
 .netlify/state.json
 .netlify/cache/
 .DS_Store

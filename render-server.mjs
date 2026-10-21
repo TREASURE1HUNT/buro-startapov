@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import handler from './.netlify/functions/database.mjs';
+import evaluateHandler from './.netlify/functions/evaluate.mjs';
 import { closeDatabase, getDatabase } from './render/postgres-adapter.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -17,12 +18,13 @@ async function migrate() {
     await client.query('BEGIN');
     await client.query("SELECT pg_advisory_xact_lock(hashtext('buro-startapov-migrations'))");
     await client.query('CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())');
-    const version = '0001_core';
-    const applied = await client.query('SELECT version FROM schema_migrations WHERE version=$1', [version]);
-    if (!applied.rows.length) {
-      const sql = await readFile(path.join(root, 'netlify/database/migrations/0001_core/migration.sql'), 'utf8');
-      await client.query(sql);
-      await client.query('INSERT INTO schema_migrations(version) VALUES($1)', [version]);
+    for (const version of ['0001_core', '0002_analytics', '0003_unicornbase_seed']) {
+      const applied = await client.query('SELECT version FROM schema_migrations WHERE version=$1', [version]);
+      if (!applied.rows.length) {
+        const sql = await readFile(path.join(root, `netlify/database/migrations/${version}/migration.sql`), 'utf8');
+        await client.query(sql);
+        await client.query('INSERT INTO schema_migrations(version) VALUES($1)', [version]);
+      }
     }
     await client.query('COMMIT');
   } catch (error) { await client.query('ROLLBACK'); throw error; }
@@ -38,7 +40,29 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ ok: true, database: 'connected' }));
     } catch { res.writeHead(503, { 'content-type': 'application/json' }); return res.end('{"ok":false}'); }
   }
-  if (['/api/evaluate', '/api/support', '/api/community-votes'].includes(url.pathname)) {
+  if (url.pathname === '/api/analytics' && req.method === 'POST') {
+    try {
+      const chunks = []; for await (const chunk of req) chunks.push(chunk);
+      const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      const allowed = new Set(['page_view', 'project_view', 'signup', 'project_create', 'vote', 'ai_evaluation']);
+      const event = String(data.event || '');
+      if (!allowed.has(event)) { res.writeHead(400, { 'content-type': 'application/json' }); return res.end('{"error":"Invalid event"}'); }
+      const projectId = /^[\p{L}\p{N}_-]{1,100}$/u.test(String(data.projectId || '')) ? String(data.projectId) : null;
+      const route = String(data.route || '/').slice(0, 160).replace(/[?#].*$/, '');
+      await getDatabase().sql`INSERT INTO app_analytics(event_name,route,project_id) VALUES(${event},${route},${projectId})`;
+      res.writeHead(202, { 'content-type': 'application/json', 'cache-control': 'no-store' }); return res.end('{"ok":true}');
+    } catch { res.writeHead(400, { 'content-type': 'application/json' }); return res.end('{"error":"Invalid analytics event"}'); }
+  }
+  if (url.pathname === '/api/evaluate') {
+    try {
+      const chunks = []; for await (const chunk of req) chunks.push(chunk);
+      const response = await evaluateHandler(new Request(`https://${req.headers.host || 'localhost'}${req.url}`, { method: req.method, headers: req.headers, body: Buffer.concat(chunks), duplex: 'half' }));
+      if (response.ok) getDatabase().sql`INSERT INTO app_analytics(event_name,route,project_id) VALUES('ai_evaluation','/create',NULL)`.catch(() => {});
+      res.writeHead(response.status, Object.fromEntries(response.headers));
+      return res.end(Buffer.from(await response.arrayBuffer()));
+    } catch (error) { console.error('AI evaluation failed:', error); res.writeHead(502, { 'content-type': 'application/json' }); return res.end('{"error":"Не удалось выполнить анализ стартапа."}'); }
+  }
+  if (['/api/support', '/api/community-votes'].includes(url.pathname)) {
     try {
       const chunks = [];
       if (req.method !== 'GET' && req.method !== 'HEAD') for await (const chunk of req) chunks.push(chunk);

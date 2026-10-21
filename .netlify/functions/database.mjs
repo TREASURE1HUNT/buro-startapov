@@ -79,6 +79,7 @@ export default async function handler(req) {
       const profile=body.profile&&typeof body.profile==='object'?body.profile:{investorFocus:String(body.investorFocus||''),ticketSize:String(body.ticketSize||'')};
       const rows=await db.sql`INSERT INTO app_accounts(email,name,role,password_hash,password_salt,password_scheme,profile) VALUES(${email},${name},${role},${passwordHash},${salt},${'scrypt'},${JSON.stringify(profile)}::jsonb) ON CONFLICT DO NOTHING RETURNING email,name,role,profile,created_at`;
       if(!rows[0])return reply({error:'Аккаунт с таким email уже существует.'},409);
+      await db.sql`INSERT INTO app_analytics(event_name,route) VALUES('signup','/register')`;
       await importState(email,body.records,body.projects);
       return reply(await stateFor(email),201,{'set-cookie':await setSession(email)});
     }
@@ -130,6 +131,7 @@ export default async function handler(req) {
       const document={...project,ownerEmail:who.email,ownerName:who.name};
       const rows=await db.sql`INSERT INTO app_projects(id,owner_email,document) VALUES(${String(project.id)},${who.email},${JSON.stringify(document)}::jsonb) ON CONFLICT(id) DO UPDATE SET document=EXCLUDED.document,updated_at=now() WHERE app_projects.owner_email=EXCLUDED.owner_email RETURNING id`;
       if(!rows[0])return reply({error:'Этот идентификатор проекта принадлежит другой команде.'},409);
+      await db.sql`INSERT INTO app_analytics(event_name,route,project_id) VALUES('project_create','/create',${String(project.id)})`;
       return reply({project:document});
     }
     if(body.action==='delete-project') { const rows=await db.sql`DELETE FROM app_projects WHERE id=${String(body.projectId||'')} AND owner_email=${who.email} RETURNING id`;if(rows.length)await db.sql`DELETE FROM app_votes WHERE project_id=${String(body.projectId||'')}`;return rows.length?reply({ok:true}):reply({error:'Проект не найден.'},404); }
@@ -142,6 +144,7 @@ export default async function handler(req) {
       else await db.sql`INSERT INTO app_votes(project_id,voter_key,vote) VALUES(${projectId},${voterKey},${body.vote}) ON CONFLICT(project_id,voter_key) DO UPDATE SET vote=EXCLUDED.vote,updated_at=now()`;
       const rows=await db.sql`SELECT SUM(CASE WHEN vote='up' THEN 1 ELSE 0 END)::int AS up,SUM(CASE WHEN vote='down' THEN 1 ELSE 0 END)::int AS down FROM app_votes WHERE project_id=${projectId}`;
       const mine=await db.sql`SELECT vote FROM app_votes WHERE project_id=${projectId} AND voter_key=${voterKey}`;
+      await db.sql`INSERT INTO app_analytics(event_name,route,project_id) VALUES('vote','/project',${projectId})`;
       return reply({up:rows[0]?.up||0,down:rows[0]?.down||0,myVote:mine[0]?.vote||null});
     }
     return reply({error:'Неизвестный запрос.'},404);

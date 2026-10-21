@@ -1,2 +1,47 @@
-const configuredKey=process.env.INFERENCE_API_KEY||process.env.OPENAI_API_KEY;const isDahl=Boolean(process.env.INFERENCE_API_KEY)||configuredKey?.startsWith('dahl_');const base=(process.env.INFERENCE_BASE_URL||(isDahl?'https://inference.dahl.global/v1':'https://api.openai.com/v1')).replace(/\/$/,'');const model=process.env.INFERENCE_MODEL||process.env.OPENAI_MODEL||(isDahl?'zai-org/GLM-5.3-Flash':'gpt-4.1-mini');
-export default async function handler(req){if(req.method!=='POST')return Response.json({error:'Method not allowed'},{status:405});const key=configuredKey;if(!key)return Response.json({error:'Добавьте INFERENCE_API_KEY в переменные окружения сайта Netlify.'},{status:503});let p;try{p=await req.json()}catch{return Response.json({error:'Некорректный JSON.'},{status:400})}for(const f of ['name','category','stage','problem','audience','value'])if(typeof p[f]!=='string'||!p[f].trim())return Response.json({error:'Заполните обязательные поля проекта.'},{status:400});try{const r=await fetch(base+'/chat/completions',{method:'POST',headers:{authorization:'Bearer '+key,'content-type':'application/json'},body:JSON.stringify({model,temperature:.2,max_tokens:2048,messages:[{role:'system',content:'Ты — беспристрастный аналитик стартапов. Оцени только качество и проверяемость описания, не личности. Верни только JSON с полями score (целое 0–100), summary (кратко), strengths (массив из двух пунктов), next_step (одно действие). Учитывай проблему, доказательства спроса, аудиторию, ценность и стадию. Не выдумывай факты. Ответ на русском.'},{role:'user',content:JSON.stringify(p)}]})});const d=await r.json();if(!r.ok)return Response.json({error:d.error?.message||'Ошибка inference API'},{status:502});const content=d.choices?.[0]?.message?.content||'';const result=JSON.parse(content.replace(/^```(?:json)?\s*|\s*```$/g,''));if(!Number.isInteger(result.score)||result.score<0||result.score>100)throw Error('Invalid score');return Response.json({...result,model,weight:25,updatedAt:new Date().toISOString(),source:'inference'})}catch(e){return Response.json({error:e.message||'Не удалось оценить проект.'},{status:502})}}
+const configuredKey = process.env.INFERENCE_API_KEY || process.env.OPENAI_API_KEY;
+const isDahl = Boolean(process.env.INFERENCE_API_KEY) || configuredKey?.startsWith('dahl_');
+const base = (process.env.INFERENCE_BASE_URL || (isDahl ? 'https://inference.dahl.global/v1' : 'https://api.openai.com/v1')).replace(/\/$/, '');
+const model = process.env.INFERENCE_MODEL || process.env.OPENAI_MODEL || (isDahl ? 'zai-org/GLM-5.3-Flash' : 'gpt-4.1-mini');
+const rubric = [
+  ['problem', 'Ясность и масштаб проблемы', 20],
+  ['demand', 'Подтверждение спроса', 20],
+  ['customer', 'Конкретность целевой аудитории', 15],
+  ['solution', 'Ценность и отличие решения', 15],
+  ['business', 'Путь к устойчивой экономике', 15],
+  ['execution', 'Соответствие стадии и качество доказательств', 15],
+];
+const clampText = (value, max = 1200) => String(value || '').trim().slice(0, max);
+const validScore = value => Number.isInteger(value) && value >= 0 && value <= 100;
+const error = (message, status) => Response.json({ error: message }, { status });
+
+export default async function handler(req) {
+  if (req.method !== 'POST') return error('Method not allowed', 405);
+  if (!configuredKey) return error('Добавьте INFERENCE_API_KEY в переменные окружения API.', 503);
+  let input;
+  try { input = await req.json(); } catch { return error('Некорректный JSON.', 400); }
+  const project = Object.fromEntries(['name', 'category', 'stage', 'problem', 'audience', 'value', 'description', 'businessModel', 'markets', 'technologies', 'fundingAsk', 'fundingCurrency', 'fundingGoal', 'teamName', 'teamResponsibility', 'news'].map(key => [key, clampText(input[key])]));
+  for (const field of ['name', 'category', 'stage', 'problem', 'audience', 'value']) if (!project[field]) return error('Заполните название, направление, стадию, проблему, аудиторию и ценность проекта.', 400);
+  const criterionShape = Object.fromEntries(rubric.map(([key]) => [key, { score: 0, evidence: '', gap: '' }]));
+  const system = `Ты — аналитик ранних стартапов. Оценивай ТОЛЬКО данные из карточки, не придумывай рынок, клиентов, выручку, конкурентов или результаты. Если подтверждений нет, прямо укажи «не представлено» и снижай demand/evidence. Отличай проверенный факт от заявления команды. Верни ТОЛЬКО корректный JSON без markdown по схеме: {"criteria":${JSON.stringify(criterionShape)},"strengths":["..."],"risks":["..."],"next_steps":["..."],"missing_evidence":["..."],"summary":"..."}. В каждом критерии score — целое 0..100; evidence — что конкретно найдено в описании, gap — чего не хватает. strengths/risks/next_steps/missing_evidence — от 1 до 4 коротких пунктов, все предметные и привязанные к карточке. Если данных мало, не заполняй пробелы оптимистичными допущениями. Ответ на русском.`;
+  try {
+    const response = await fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${configuredKey}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ model, temperature: 0.1, max_tokens: 1800, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: JSON.stringify(project) }] }),
+    });
+    const data = await response.json();
+    if (!response.ok) return error(data.error?.message || 'Ошибка inference API', 502);
+    const raw = data.choices?.[0]?.message?.content || '';
+    const result = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, ''));
+    if (!result.criteria || rubric.some(([key]) => !validScore(result.criteria[key]?.score))) throw new Error('ИИ вернул неполную оценку по критериям. Повторите анализ.');
+    for (const [key] of rubric) {
+      result.criteria[key].evidence = clampText(result.criteria[key].evidence, 400);
+      result.criteria[key].gap = clampText(result.criteria[key].gap, 400);
+    }
+    const score = Math.round(rubric.reduce((sum, [key, , weight]) => sum + result.criteria[key].score * weight / 100, 0));
+    const list = key => Array.isArray(result[key]) ? result[key].slice(0, 4).map(item => clampText(item, 260)) : [];
+    return Response.json({ score, rubric: rubric.map(([key, label, weight]) => ({ key, label, weight, ...result.criteria[key] })), summary: clampText(result.summary, 500), strengths: list('strengths'), risks: list('risks'), next_steps: list('next_steps'), missing_evidence: list('missing_evidence'), model, weight: 25, updatedAt: new Date().toISOString(), source: 'inference' });
+  } catch (cause) {
+    return error(cause.message || 'Не удалось оценить проект.', 502);
+  }
+}
