@@ -22,7 +22,8 @@ export default async function handler(request) {
 
   const voter = email?.trim() ? `account:${email.trim().toLowerCase()}` : `browser:${browserId}`;
   const voterKey = createHash('sha256').update(voter).digest('hex');
-  const store = getStore('buro-community-votes');
+  // Strong consistency keeps the visible tally in sync immediately across accounts/devices.
+  const store = getStore('buro-community-votes', { consistency: 'strong' });
   const key = `project:${projectId}`;
 
   try {
