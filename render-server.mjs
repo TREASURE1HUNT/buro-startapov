@@ -7,26 +7,30 @@ import { closeDatabase, getDatabase } from './render/postgres-adapter.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 10000);
+const mimeTypes = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.webm': 'video/webm', '.ico': 'image/x-icon' };
 
 async function migrate() {
-  const db = getDatabase();
-  await db.sql`CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`;
-  const version = '0001_core';
-  if ((await db.sql`SELECT version FROM schema_migrations WHERE version=${version}`).length) return;
-  const sql = await readFile(path.join(root, 'netlify/database/migrations/0001_core/migration.sql'), 'utf8');
   const { default: pg } = await import('pg');
   const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : undefined });
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(sql);
-    await client.query('INSERT INTO schema_migrations(version) VALUES($1)', [version]);
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('buro-startapov-migrations'))");
+    await client.query('CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())');
+    const version = '0001_core';
+    const applied = await client.query('SELECT version FROM schema_migrations WHERE version=$1', [version]);
+    if (!applied.rows.length) {
+      const sql = await readFile(path.join(root, 'netlify/database/migrations/0001_core/migration.sql'), 'utf8');
+      await client.query(sql);
+      await client.query('INSERT INTO schema_migrations(version) VALUES($1)', [version]);
+    }
     await client.query('COMMIT');
   } catch (error) { await client.query('ROLLBACK'); throw error; }
   finally { client.release(); await pool.end(); }
 }
 
 const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
   if (req.method === 'GET' && req.url === '/health') {
     try {
       await getDatabase().sql`SELECT 1`;
@@ -34,7 +38,36 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ ok: true, database: 'connected' }));
     } catch { res.writeHead(503, { 'content-type': 'application/json' }); return res.end('{"ok":false}'); }
   }
-  if (!req.url?.startsWith('/api/database')) { res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"error":"Not found"}'); }
+  if (['/api/evaluate', '/api/support', '/api/community-votes'].includes(url.pathname)) {
+    try {
+      const chunks = [];
+      if (req.method !== 'GET' && req.method !== 'HEAD') for await (const chunk of req) chunks.push(chunk);
+      const body = Buffer.concat(chunks);
+      const upstream = await fetch(`https://buro-startapov.netlify.app${url.pathname}${url.search}`, {
+        method: req.method,
+        headers: { 'content-type': req.headers['content-type'] || 'application/json' },
+        ...(body.length ? { body } : {}),
+      });
+      res.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') || 'application/json', 'cache-control': 'no-store' });
+      return res.end(Buffer.from(await upstream.arrayBuffer()));
+    } catch { res.writeHead(502, { 'content-type': 'application/json' }); return res.end('{"error":"AI-сервис временно недоступен."}'); }
+  }
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    if (url.pathname.startsWith('/api/')) {
+      res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"error":"Not found"}');
+    }
+    try {
+      let relative = decodeURIComponent(url.pathname).replace(/^\/+/, '');
+      if (!relative || relative.endsWith('/')) relative += 'index.html';
+      else if (!path.extname(relative)) relative += '.html';
+      const file = path.resolve(root, relative);
+      if (!file.startsWith(root + path.sep) || relative.split(/[\\/]/).some(part => part.startsWith('.'))) { res.writeHead(403); return res.end('Forbidden'); }
+      const content = await readFile(file);
+      res.writeHead(200, { 'content-type': mimeTypes[path.extname(file).toLowerCase()] || 'application/octet-stream', 'x-content-type-options': 'nosniff' });
+      return req.method === 'HEAD' ? res.end() : res.end(content);
+    } catch { res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }); return res.end('Not Found'); }
+  }
+  if (!url.pathname.startsWith('/api/database')) { res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"error":"Not found"}'); }
   try {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
