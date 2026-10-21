@@ -54,7 +54,7 @@
       if (await hashPassword(password, salt) !== user.passwordHash) { show(result, 'Неверный email или пароль.', true); return; }
       localStorage.setItem(currentKey, JSON.stringify({ name: user.name, email: user.email, role: user.role, createdAt: user.createdAt }));
       show(result, 'Вы вошли. Открываю профиль…');
-      setTimeout(() => { location.href = 'profile.html'; }, 350);
+      setTimeout(() => { const next = new URLSearchParams(location.search).get('next'); location.href = next === 'create.html' ? 'create.html' : 'profile.html'; }, 350);
     } catch {
       show(result, 'Не удалось выполнить вход. Проверьте, включено ли хранилище браузера.', true);
     }
