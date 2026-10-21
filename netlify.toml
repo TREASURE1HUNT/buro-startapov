@@ -12,6 +12,11 @@
   to = "/.netlify/functions/support"
   status = 200
 
+[[redirects]]
+  from = "/api/community-votes"
+  to = "/.netlify/functions/community-votes"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
