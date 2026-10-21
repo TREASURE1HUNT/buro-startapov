@@ -22,12 +22,12 @@ export default async function handler(req) {
   const project = Object.fromEntries(['name', 'category', 'stage', 'problem', 'audience', 'value', 'description', 'businessModel', 'markets', 'technologies', 'fundingAsk', 'fundingCurrency', 'fundingGoal', 'teamName', 'teamResponsibility', 'news'].map(key => [key, clampText(input[key])]));
   for (const field of ['name', 'category', 'stage', 'problem', 'audience', 'value']) if (!project[field]) return error('Заполните название, направление, стадию, проблему, аудиторию и ценность проекта.', 400);
   
-  const system = `Ты — аналитик стартапов. Оценивай только данные карточки; не придумывай рынок, клиентов, выручку и результаты. Отмечай отсутствие доказательств и отличай заявление от подтверждённого результата. Верни только корректный JSON без markdown по форме: {"criteria":{"problem":{"score":0,"evidence":"","gap":""},"demand":{"score":0,"evidence":"","gap":""},"customer":{"score":0,"evidence":"","gap":""},"solution":{"score":0,"evidence":"","gap":""},"business":{"score":0,"evidence":"","gap":""},"execution":{"score":0,"evidence":"","gap":""}},"strengths":[""],"risks":[""],"next_steps":[""],"missing_evidence":[""],"summary":""}. Оценки — целые 0..100; evidence/gap и списки — короткие, конкретные, по-русски.`;
+  const system = `Ты — аналитик стартапов. Оценивай только данные карточки; не придумывай рынок, клиентов, выручку и результаты. Отмечай отсутствие доказательств и отличай заявление от подтверждённого результата. Верни только корректный JSON без markdown по форме: {"criteria":{"problem":{"score":0,"evidence":"","gap":""},"demand":{"score":0,"evidence":"","gap":""},"customer":{"score":0,"evidence":"","gap":""},"solution":{"score":0,"evidence":"","gap":""},"business":{"score":0,"evidence":"","gap":""},"execution":{"score":0,"evidence":"","gap":""}},"strengths":[""],"risks":[""],"next_steps":[""],"missing_evidence":[""],"summary":""}. Оценки — целые 0..100; evidence и gap — по одной короткой фразе; списки — до 3 кратких пунктов, по-русски.`;
   try {
     const response = await fetch(`${base}/chat/completions`, {
       method: 'POST',
       headers: { authorization: `Bearer ${configuredKey}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ model, temperature: 0.1, max_tokens: 4000, chat_template_kwargs: { enable_thinking: false }, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: JSON.stringify(project) }] }),
+      body: JSON.stringify({ model, temperature: 0.1, max_tokens: 1800, chat_template_kwargs: { enable_thinking: false }, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: JSON.stringify(project) }] }),
     });
     const rawResponse = await response.text();
     let data;
