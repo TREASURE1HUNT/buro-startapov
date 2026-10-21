@@ -23,19 +23,17 @@ export default async function handler(request) {
   const voter = email?.trim() ? `account:${email.trim().toLowerCase()}` : `browser:${browserId}`;
   const voterKey = createHash('sha256').update(voter).digest('hex');
   const store = getStore('buro-community-votes');
-  const prefix = `project:${projectId}:voter:`;
-  const key = `${prefix}${voterKey}`;
+  const key = `project:${projectId}`;
 
   try {
+    const data = await store.get(key, { type: 'json' });
+    const voters = data?.voters && typeof data.voters === 'object' ? { ...data.voters } : {};
     if (vote !== undefined) {
-      const old = await store.get(key, { type: 'json' });
-      if (vote === null || old?.vote === vote) await store.delete(key);
-      else await store.setJSON(key, { vote });
+      if (vote === null || voters[voterKey] === vote) delete voters[voterKey];
+      else voters[voterKey] = vote;
+      await store.setJSON(key, { voters });
     }
-    const { blobs } = await store.list({ prefix });
-    const ballots = await Promise.all(blobs.map(async blob => (await store.get(blob.key, { type: 'json' }))?.vote));
-    const votes = ballots.filter(value => value === 'up' || value === 'down');
-    return json({ ...tally(votes), myVote: vote === undefined ? (await store.get(key, { type: 'json' }))?.vote || null : (vote === null ? null : vote) });
+    return json({ ...tally(voters), myVote: voters[voterKey] || null });
   } catch (error) {
     console.error('community-votes error', error);
     return json({ error: 'Общее хранилище голосов пока недоступно.' }, 503);
