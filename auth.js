@@ -26,13 +26,15 @@
     const email = register.elements.email.value.trim().toLowerCase();
     const password = register.elements.password.value;
     const role = register.elements.role.value;
+    if (password !== register.elements.passwordConfirm.value) { show(result, 'Пароли не совпадают — проверьте оба поля.', true); register.elements.passwordConfirm.focus(); return; }
+    const investorFocus = register.elements.investorFocus?.value.trim() || ''; const ticketSize = register.elements.ticketSize?.value.trim() || '';
     try {
       const users = readUsers();
       if (users.some(user => user.email === email)) { show(result, 'Этот email уже зарегистрирован в этом браузере. Войдите в аккаунт.', true); return; }
       const salt = crypto.getRandomValues(new Uint8Array(16));
-      users.push({ name, email, role, salt: bytesToHex(salt), passwordHash: await hashPassword(password, salt), createdAt: new Date().toISOString() });
+      users.push({ name, email, role, investorFocus, ticketSize, salt: bytesToHex(salt), passwordHash: await hashPassword(password, salt), createdAt: new Date().toISOString() });
       localStorage.setItem(usersKey, JSON.stringify(users));
-      localStorage.setItem(currentKey, JSON.stringify({ name, email, role, createdAt: new Date().toISOString() }));
+      localStorage.setItem(currentKey, JSON.stringify({ name, email, role, investorFocus, ticketSize, createdAt: new Date().toISOString() }));
       show(result, 'Аккаунт создан. Открываю ваш профиль…');
       setTimeout(() => { location.href = 'profile.html'; }, 450);
     } catch (error) {
@@ -52,7 +54,7 @@
       if (!user) { show(result, 'Аккаунт для этого email не найден в данном браузере. Создайте его на странице регистрации.', true); return; }
       const salt = Uint8Array.from(user.salt.match(/.{2}/g).map(byte => parseInt(byte, 16)));
       if (await hashPassword(password, salt) !== user.passwordHash) { show(result, 'Неверный email или пароль.', true); return; }
-      localStorage.setItem(currentKey, JSON.stringify({ name: user.name, email: user.email, role: user.role, createdAt: user.createdAt }));
+      localStorage.setItem(currentKey, JSON.stringify({ name: user.name, email: user.email, role: user.role, investorFocus: user.investorFocus || '', ticketSize: user.ticketSize || '', createdAt: user.createdAt }));
       show(result, 'Вы вошли. Открываю профиль…');
       setTimeout(() => { const next = new URLSearchParams(location.search).get('next'); location.href = next === 'create.html' ? 'create.html' : 'profile.html'; }, 350);
     } catch {
@@ -60,3 +62,5 @@
     }
   }, true);
 })();
+
+(() => { const roleInputs=document.querySelectorAll('input[name=role]'); const extra=document.querySelector('.investor-extra'); const update=()=>{if(extra)extra.hidden=document.querySelector('input[name=role]:checked')?.value!=='investor';}; roleInputs.forEach(input=>input.addEventListener('change',update)); update(); })();

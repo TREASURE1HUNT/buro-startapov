@@ -1,0 +1,8 @@
+(() => {
+ const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch{return fallback}};
+ const accounts=read('buro-browser-users-v1',[]).filter(user=>user.role==='investor');
+ const rows=accounts.map(user=>({name:user.name||'Инвестор',focus:user.investorFocus||'Отрасли не указаны',ticket:user.ticketSize||'Диапазон не указан',saved:read(`buro-investor-saved-${user.email}`,[]).length})).sort((a,b)=>b.saved-a.saved||a.name.localeCompare(b.name,'ru'));
+ const markup=rows.length?rows.map((item,index)=>`<article class="investor-row"><b class="investor-rank">${String(index+1).padStart(2,'0')}</b><div><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.focus)}</p><small>Чек: ${escapeHtml(item.ticket)}</small></div><strong>${item.saved}<small> в подборке</small></strong></article>`).join(''):'<div class="investor-empty"><h3>Пока нет профилей инвесторов</h3><p>Зарегистрируйтесь как инвестор — добавьте инвестиционные интересы, и ваш профиль появится в списке.</p><a class="arrow-link" href="register.html">Создать профиль инвестора ↗</a></div>';
+ document.querySelectorAll('#investor-directory,#investor-top').forEach(el=>{if(!el)return;el.innerHTML=el.id==='investor-top'?rows.slice(0,3).map((item,index)=>`<article class="investor-row"><b class="investor-rank">${String(index+1).padStart(2,'0')}</b><div><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.focus)}</p></div><strong>${item.saved}<small> в подборке</small></strong></article>`).join('')||markup:markup;});
+ function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+})();
