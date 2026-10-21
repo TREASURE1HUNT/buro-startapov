@@ -17,6 +17,7 @@
     result.dataset.state = error ? 'error' : 'success';
   }
   const register = document.querySelector('#register-form');
+  if (location.hash === '#investor') { const option=document.querySelector('input[name=role][value=investor]'); if(option){option.checked=true;option.dispatchEvent(new Event('change',{bubbles:true}));} }
   if (register) register.addEventListener('submit', async event => {
     event.preventDefault();
     event.stopImmediatePropagation();

@@ -4,6 +4,7 @@
   const page = location.pathname.split('/').pop();
   if (page === 'create.html' || page === 'create') {
     if (!account()) { location.replace('login.html?next=create.html'); return; }
+    if (account().role !== 'startup') { location.replace('profile.html'); return; }
     if (form) {
       const add = (html, before) => before.insertAdjacentHTML('beforebegin', html);
       const actions = form.querySelector('.form-actions');
@@ -20,7 +21,7 @@
         const media=await Promise.all(files.map(file=>new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve({src:r.result,type:file.type.startsWith('video/')?'video':'image',name:file.name});r.onerror=()=>resolve(null);r.readAsDataURL(file)})));
         const data=Object.fromEntries(['name','description','category','stage','problem','audience','value','teamName','teamResponsibility','descriptionMarkdown','markets','technologies','businessModel','round','fundingAsk','contactEmail','fundingGoal','news','themePrimary','themeBackground','themeText'].map(k=>[k,(form.elements[k]?.value||'').trim()]));
         const id='user-'+(data.name.toLowerCase().replace(/[^a-zа-я0-9]+/gi,'-').replace(/^-|-$/g,'')||Date.now());
-        const record={...data,id,ownerEmail:user.email,progress:100,art:'art-leaf',media:media.filter(Boolean),updatedAt:new Date().toISOString()};
+        const record={...data,id,ownerEmail:user.email,ownerName:user.name||user.fullName||"Команда проекта",progress:100,art:'art-leaf',media:media.filter(Boolean),updatedAt:new Date().toISOString()};
         try { localStorage.setItem('buro-startapov-project-v1',JSON.stringify(data)); const list=JSON.parse(localStorage.getItem('buro-startapov-projects-v1')||'[]');const i=list.findIndex(p=>p.id===id);if(i>=0)list[i]=record;else list.push(record);localStorage.setItem('buro-startapov-projects-v1',JSON.stringify(list));location.href='project.html?id='+encodeURIComponent(id); } catch { alert('Не удалось сохранить проект. Уменьшите объём видео или изображений и повторите.'); }
       }, true);
       const aiButton=document.querySelector('#ai-review');
