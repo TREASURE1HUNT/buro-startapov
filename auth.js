@@ -1,67 +1,31 @@
 (() => {
-  const usersKey = 'buro-browser-users-v1';
-  const currentKey = 'buro-demo-account';
-  const encoder = new TextEncoder();
-  const bytesToHex = bytes => [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('');
-  async function hashPassword(password, salt) {
-    const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']);
-    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, key, 256);
-    return bytesToHex(new Uint8Array(bits));
-  }
-  function readUsers() {
-    try { const value = JSON.parse(localStorage.getItem(usersKey) || '[]'); return Array.isArray(value) ? value : []; }
-    catch { return []; }
-  }
-  function show(result, message, error = false) {
-    result.textContent = message;
-    result.dataset.state = error ? 'error' : 'success';
-  }
-  const register = document.querySelector('#register-form');
-  if (location.hash === '#investor') { const option=document.querySelector('input[name=role][value=investor]'); if(option){option.checked=true;option.dispatchEvent(new Event('change',{bubbles:true}));} }
-  if (register) register.addEventListener('submit', async event => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    if (!register.reportValidity()) return;
-    const result = document.querySelector('#register-result');
-    const name = register.elements.fullName.value.trim();
-    const email = register.elements.email.value.trim().toLowerCase();
-    const password = register.elements.password.value;
-    const role = register.elements.role.value;
-    if (password !== register.elements.passwordConfirm.value) { show(result, 'Пароли не совпадают — проверьте оба поля.', true); register.elements.passwordConfirm.focus(); return; }
-    const investorFocus = register.elements.investorFocus?.value.trim() || ''; const ticketSize = register.elements.ticketSize?.value.trim() || '';
-    try {
-      const users = readUsers();
-      if (users.some(user => user.email === email)) { show(result, 'Этот email уже зарегистрирован в этом браузере. Войдите в аккаунт.', true); return; }
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      users.push({ name, email, role, investorFocus, ticketSize, salt: bytesToHex(salt), passwordHash: await hashPassword(password, salt), createdAt: new Date().toISOString() });
-      localStorage.setItem(usersKey, JSON.stringify(users));
-      localStorage.setItem(currentKey, JSON.stringify({ name, email, role, investorFocus, ticketSize, createdAt: new Date().toISOString() }));
-      show(result, 'Аккаунт создан. Открываю ваш профиль…');
-      setTimeout(() => { location.href = 'profile.html'; }, 450);
-    } catch (error) {
-      show(result, error.name === 'QuotaExceededError' ? 'В хранилище браузера нет места. Удалите старые данные и повторите.' : 'Не удалось сохранить аккаунт. Проверьте, включено ли хранилище браузера.', true);
-    }
-  }, true);
-  const login = document.querySelector('#login-form');
-  if (login) login.addEventListener('submit', async event => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    if (!login.reportValidity()) return;
-    const result = document.querySelector('#login-result');
-    const email = login.elements.email.value.trim().toLowerCase();
-    const password = login.elements.password.value;
-    try {
-      const user = readUsers().find(item => item.email === email);
-      if (!user) { show(result, 'Аккаунт для этого email не найден в данном браузере. Создайте его на странице регистрации.', true); return; }
-      const salt = Uint8Array.from(user.salt.match(/.{2}/g).map(byte => parseInt(byte, 16)));
-      if (await hashPassword(password, salt) !== user.passwordHash) { show(result, 'Неверный email или пароль.', true); return; }
-      localStorage.setItem(currentKey, JSON.stringify({ name: user.name, email: user.email, role: user.role, investorFocus: user.investorFocus || '', ticketSize: user.ticketSize || '', createdAt: user.createdAt }));
-      show(result, 'Вы вошли. Открываю профиль…');
-      setTimeout(() => { const next = new URLSearchParams(location.search).get('next'); location.href = next === 'create.html' ? 'create.html' : 'profile.html'; }, 350);
-    } catch {
-      show(result, 'Не удалось выполнить вход. Проверьте, включено ли хранилище браузера.', true);
-    }
-  }, true);
+  const accountKey='buro-demo-account', usersKey='buro-browser-users-v1', projectKey='buro-startapov-projects-v1';
+  const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}};
+  const records=()=>Object.fromEntries(Object.keys(localStorage).filter(key=>key.startsWith('buro-')&&!['buro-demo-account','buro-browser-users-v1',projectKey].includes(key)).map(key=>[key,read(key,null)]));
+  const projectsFor=email=>read(projectKey,[]).filter(item=>String(item.ownerEmail||'').toLowerCase()===email);
+  const call=async body=>{const response=await fetch('/api/database',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw Object.assign(new Error(data.error||'Ошибка сервера.'),{status:response.status});return data;};
+  function cacheState(data){if(data.account)localStorage.setItem(accountKey,JSON.stringify(data.account));for(const [key,value] of Object.entries(data.records||{}))localStorage.setItem(key,JSON.stringify(value));if(Array.isArray(data.projects)){const local=read(projectKey,[]).filter(p=>String(p.ownerEmail||'').toLowerCase()!==data.account?.email);localStorage.setItem(projectKey,JSON.stringify([...local,...data.projects]));}}
+  const register=document.querySelector('#register-form');
+  if(location.hash==='#investor'){const option=document.querySelector('input[name=role][value=investor]');if(option){option.checked=true;option.dispatchEvent(new Event('change',{bubbles:true}));}}
+  if(register)register.addEventListener('submit',async event=>{
+    event.preventDefault();event.stopImmediatePropagation();if(!register.reportValidity())return;const result=document.querySelector('#register-result');
+    const name=register.elements.fullName.value.trim(),email=register.elements.email.value.trim().toLowerCase(),password=register.elements.password.value,role=register.elements.role.value;
+    if(password!==register.elements.passwordConfirm.value){result.textContent='Пароли не совпадают — проверьте оба поля.';result.dataset.state='error';register.elements.passwordConfirm.focus();return;}
+    try{const data=await call({action:'register',name,email,password,role,investorFocus:register.elements.investorFocus?.value.trim()||'',ticketSize:register.elements.ticketSize?.value.trim()||'',records:records(),projects:projectsFor(email)});cacheState(data);result.textContent='Аккаунт и данные сохранены в базе Netlify. Открываю профиль…';setTimeout(()=>location.href='profile.html',350);}
+    catch(error){result.textContent=error.message;result.dataset.state='error';}
+  },true);
+  const login=document.querySelector('#login-form');
+  if(login)login.addEventListener('submit',async event=>{
+    event.preventDefault();event.stopImmediatePropagation();if(!login.reportValidity())return;const result=document.querySelector('#login-result');
+    const email=login.elements.email.value.trim().toLowerCase(),password=login.elements.password.value;
+    try{let data;try{data=await call({action:'login',email,password});}
+      catch(error){if(error.status!==401)throw error;const old=read(usersKey,[]).find(user=>user.email===email);if(!old?.salt||!old.passwordHash)throw error;
+        const enc=new TextEncoder(),salt=Uint8Array.from(old.salt.match(/.{2}/g).map(byte=>parseInt(byte,16))),key=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveBits']),bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:120000,hash:'SHA-256'},key,256),hash=[...new Uint8Array(bits)].map(byte=>byte.toString(16).padStart(2,'0')).join('');if(hash!==old.passwordHash)throw error;
+        data=await call({action:'register',name:old.name||email.split('@')[0],email,password,role:old.role||'startup',investorFocus:old.investorFocus||'',ticketSize:old.ticketSize||'',records:records(),projects:projectsFor(email)});
+      }
+      cacheState(data);result.textContent='Вход выполнен. Профиль и данные загружены из базы Netlify…';setTimeout(()=>{const next=new URLSearchParams(location.search).get('next');location.href=next==='create.html'?'create.html':'profile.html';},300);
+    }catch(error){result.textContent=error.status===401?'Неверный email или пароль.':error.message;result.dataset.state='error';}
+  },true);
 })();
 
-(() => { const roleInputs=document.querySelectorAll('input[name=role]'); const extra=document.querySelector('.investor-extra'); const update=()=>{if(extra)extra.hidden=document.querySelector('input[name=role]:checked')?.value!=='investor';}; roleInputs.forEach(input=>input.addEventListener('change',update)); update(); })();
+(() => { const roles=document.querySelectorAll('input[name=role]'),extra=document.querySelector('.investor-extra');const update=()=>{if(extra)extra.hidden=document.querySelector('input[name=role]:checked')?.value!=='investor'};roles.forEach(input=>input.addEventListener('change',update));update();})();

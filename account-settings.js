@@ -10,7 +10,7 @@
   root.hidden = false;
   const profileContent=document.querySelector('#profile-content');
   const ownedProjects=read('buro-startapov-projects-v1',[]).filter(project=>project.ownerEmail===account.email);
-  if(profileContent&&ownedProjects.length){const section=document.createElement('section');section.className='owned-startups';section.innerHTML='<div class="owned-startups-heading"><div><div class="section-index">[ УПРАВЛЕНИЕ ПРОЕКТАМИ ]</div><h2>Мои стартапы<span class="gradient-text">.</span></h2></div><a class="button" href="create.html">Добавить стартап ↗</a></div><div class="owned-startups-list"></div>';const list=section.querySelector('.owned-startups-list');list.innerHTML=ownedProjects.map(project=>{const first=Array.isArray(project.media)?project.media[0]:null;const src=typeof first==='string'?first:first?.src;const video=typeof first==='object'&&first?.type==='video';const cover=src?(video?`<video src="${escape(src)}" muted autoplay loop playsinline></video>`:`<img src="${escape(src)}" alt="">`):'<span>✳</span>';return `<article class="owned-startup-card"><div class="owned-startup-cover">${cover}</div><div class="owned-startup-copy"><span>${escape(project.category||'Стартап')} · ${escape(project.stage||'Идея')}</span><h3>${escape(project.name)}</h3><p>${escape(project.description||project.problem||'')}</p><div class="owned-startup-actions"><a class="button button-outline" href="project.html?id=${encodeURIComponent(project.id)}">Открыть ↗</a><a class="clear-button" href="create.html?edit=${encodeURIComponent(project.id)}">Редактировать</a><button class="clear-button owned-delete" type="button" data-project-id="${escape(project.id)}">Удалить ×</button></div></div></article>`}).join('');list.querySelectorAll('.owned-delete').forEach(button=>button.addEventListener('click',()=>{const target=button.dataset.projectId;if(!confirm('Удалить этот стартап? Это удалит его из профиля и каталога.'))return;const items=read('buro-startapov-projects-v1',[]);const next=items.filter(project=>project.id!==target||project.ownerEmail!==account.email);localStorage.setItem('buro-startapov-projects-v1',JSON.stringify(next));location.reload()}));profileContent.append(section);}
+  if(profileContent&&ownedProjects.length){const section=document.createElement('section');section.className='owned-startups';section.innerHTML='<div class="owned-startups-heading"><div><div class="section-index">[ УПРАВЛЕНИЕ ПРОЕКТАМИ ]</div><h2>Мои стартапы<span class="gradient-text">.</span></h2></div><a class="button" href="create.html">Добавить стартап ↗</a></div><div class="owned-startups-list"></div>';const list=section.querySelector('.owned-startups-list');list.innerHTML=ownedProjects.map(project=>{const first=Array.isArray(project.media)?project.media[0]:null;const src=typeof first==='string'?first:first?.src;const video=typeof first==='object'&&first?.type==='video';const cover=src?(video?`<video src="${escape(src)}" muted autoplay loop playsinline></video>`:`<img src="${escape(src)}" alt="">`):'<span>✳</span>';return `<article class="owned-startup-card"><div class="owned-startup-cover">${cover}</div><div class="owned-startup-copy"><span>${escape(project.category||'Стартап')} · ${escape(project.stage||'Идея')}</span><h3>${escape(project.name)}</h3><p>${escape(project.description||project.problem||'')}</p><div class="owned-startup-actions"><a class="button button-outline" href="project.html?id=${encodeURIComponent(project.id)}">Открыть ↗</a><a class="clear-button" href="create.html?edit=${encodeURIComponent(project.id)}">Редактировать</a><button class="clear-button owned-delete" type="button" data-project-id="${escape(project.id)}">Удалить ×</button></div></div></article>`}).join('');list.querySelectorAll('.owned-delete').forEach(button=>button.addEventListener('click',async()=>{const target=button.dataset.projectId;if(!confirm('Удалить этот стартап? Это удалит его из профиля и каталога.'))return;const response=await fetch('/api/database',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'delete-project',projectId:target})});if(!response.ok){alert((await response.json()).error||'Не удалось удалить проект из базы.');return;}const items=read('buro-startapov-projects-v1',[]);const next=items.filter(project=>project.id!==target||project.ownerEmail!==account.email);localStorage.setItem('buro-startapov-projects-v1',JSON.stringify(next));location.reload()}));profileContent.append(section);}
   const roleLabels = { startup: 'Стартапер', investor: 'Инвестор', mentor: 'Наставник' };
   const avatar = account.avatar ? `<img class="account-avatar-preview" src="${escape(account.avatar)}" alt="Фото профиля">` : '<span class="account-avatar-placeholder">✳</span>';
   root.innerHTML = `
@@ -47,9 +47,10 @@
     if (users.some(user => user.email !== oldEmail && user.email === email)) { result.textContent = 'Этот email уже занят другим аккаунтом.'; result.dataset.state = 'error'; return; }
     const updated = { ...account, name: profileForm.elements.name.value.trim(), email, role: role.value, bio: profileForm.elements.bio.value.trim(), location: profileForm.elements.location.value.trim(), website: profileForm.elements.website.value.trim(), contact: profileForm.elements.contact.value.trim(), investorFocus: profileForm.elements.investorFocus.value.trim(), ticketSize: profileForm.elements.ticketSize.value.trim(), updatedAt: new Date().toISOString() };
     const file = profileForm.elements.avatarFile.files?.[0];
-    const persist = avatarData => {
+    const persist = async avatarData => {
       if (avatarData) updated.avatar = avatarData;
       try {
+        const cloud=await fetch('/api/database',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'profile',name:updated.name,email:updated.email,role:updated.role,profile:{bio:updated.bio,location:updated.location,website:updated.website,contact:updated.contact,investorFocus:updated.investorFocus,ticketSize:updated.ticketSize,avatar:updated.avatar||''}})});const cloudData=await cloud.json();if(!cloud.ok)throw Error(cloudData.error||'Не удалось сохранить профиль в базе Netlify.');Object.assign(updated,cloudData.account);
         localStorage.setItem(accountKey, JSON.stringify(updated));
         const index = users.findIndex(user => user.email === oldEmail);
         if (index >= 0) users[index] = { ...users[index], name: updated.name, email: updated.email, role: updated.role, investorFocus: updated.investorFocus, ticketSize: updated.ticketSize, bio: updated.bio, location: updated.location, website: updated.website, contact: updated.contact, avatar: updated.avatar, updatedAt: updated.updatedAt };
@@ -62,7 +63,7 @@
         result.textContent = 'Профиль сохранён. Данные аккаунта и связанные проекты обновлены.';
         result.dataset.state = 'success';
         setTimeout(() => location.reload(), 450);
-      } catch (error) { result.textContent = error.name === 'QuotaExceededError' ? 'В хранилище браузера не хватает места. Уменьшите фото и попробуйте снова.' : 'Не удалось сохранить профиль в браузере.'; result.dataset.state = 'error'; }
+      } catch (error) { result.textContent = error.message||'Не удалось сохранить профиль в базе данных.'; result.dataset.state = 'error'; }
     };
     if (file) { const reader = new FileReader(); reader.onload = () => persist(String(reader.result)); reader.onerror = () => { result.textContent = 'Не удалось прочитать фото.'; result.dataset.state = 'error'; }; reader.readAsDataURL(file); }
     else persist(null);
@@ -73,25 +74,14 @@
     event.preventDefault();
     if (!passwordForm.reportValidity()) return;
     const result = root.querySelector('#account-password-result');
-    const users = read(usersKey, []);
-    const userIndex = users.findIndex(user => user.email === String(account.email || '').toLowerCase());
-    if (userIndex < 0 || !users[userIndex].salt || !users[userIndex].passwordHash) { result.textContent = 'Для этой учётной записи пароль не хранится локально. Создайте аккаунт повторно через эту форму входа.'; result.dataset.state = 'error'; return; }
     const oldPassword = passwordForm.elements.oldPassword.value;
     const nextPassword = passwordForm.elements.newPassword.value;
     if (nextPassword !== passwordForm.elements.confirmPassword.value) { result.textContent = 'Новый пароль и подтверждение не совпадают.'; result.dataset.state = 'error'; return; }
     try {
-      const encoder = new TextEncoder();
-      const hash = async (password, salt) => { const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']); const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, key, 256); return [...new Uint8Array(bits)].map(byte => byte.toString(16).padStart(2, '0')).join(''); };
-      const user = users[userIndex];
-      const salt = Uint8Array.from(user.salt.match(/.{2}/g).map(byte => parseInt(byte, 16)));
-      if (await hash(oldPassword, salt) !== user.passwordHash) { result.textContent = 'Текущий пароль введён неверно.'; result.dataset.state = 'error'; return; }
-      const newSalt = crypto.getRandomValues(new Uint8Array(16));
-      user.salt = [...newSalt].map(byte => byte.toString(16).padStart(2, '0')).join('');
-      user.passwordHash = await hash(nextPassword, newSalt);
-      localStorage.setItem(usersKey, JSON.stringify(users));
+      const response=await fetch('/api/database',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'password',oldPassword,newPassword:nextPassword})});const data=await response.json();if(!response.ok)throw Error(data.error||'Не удалось изменить пароль.');
       passwordForm.reset();
       result.textContent = 'Пароль обновлён.';
       result.dataset.state = 'success';
-    } catch { result.textContent = 'Не удалось обновить пароль. Повторите попытку.'; result.dataset.state = 'error'; }
+    } catch(error) { result.textContent = error.message||'Не удалось обновить пароль.'; result.dataset.state = 'error'; }
   });
 })();

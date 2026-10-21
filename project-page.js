@@ -1,4 +1,4 @@
-(() => {
+ (async () => {
   const seeds = {
     forest: { name: 'Вторая жизнь городского леса', short: 'Лесной круг', category: 'Экология', stage: 'Прототип', progress: 72, audience: 'Жители города, которым важны городские зелёные зоны', problem: 'Обрезанные ветки и древесные остатки часто вывозят как отходы, хотя их можно перерабатывать рядом с местом сбора.', value: 'Сервис связывает городские команды благоустройства и местных мастеров, чтобы превращать древесные остатки в полезные предметы и материалы.', art: 'art-leaf' },
     master: { name: 'Найти мастера. Довериться делу.', short: 'Мастер рядом', category: 'Сервисы', stage: 'Проверка проблемы', progress: 54, audience: 'Люди, которым нужен надёжный локальный мастер', problem: 'Людям трудно заранее понять качество работы мастера, сроки и итоговую цену услуги.', value: 'Понятный профиль специалиста, подтверждённые примеры работ и прозрачные условия заказа.', art: 'art-blue' },
@@ -12,6 +12,7 @@
   if (!project) {
     try { project = (JSON.parse(localStorage.getItem('buro-startapov-projects-v1') || '[]')).find(item => item.id === id); } catch {}
   }
+  if (!project && id) { try { const response=await fetch(`/api/database?action=project&id=${encodeURIComponent(id)}`); if(response.ok) project=(await response.json()).project; } catch {} }
   if (!project) {
     root.innerHTML = '<article class="project-detail-main"><div class="section-index">[ ПРОЕКТ НЕ НАЙДЕН ]</div><h1>Такой страницы<br>стартапа нет.</h1><p class="detail-copy">Откройте проект из каталога или создайте собственный.</p><a class="button" href="projects.html">К проектам ↗</a></article>';
     return;
@@ -108,9 +109,9 @@
     ? { email: String(account.email).trim().toLowerCase() }
     : { browserId: getAnonymousVoterId() };
   async function syncCommunityVotes(vote) {
-    const response = await fetch('/api/community-votes', {
+    const response = await fetch('/api/database', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ projectId: String(project.id || id), ...voterPayload, ...(vote === undefined ? {} : { vote }) })
+      credentials: 'same-origin', body: JSON.stringify({ action:'vote', projectId: String(project.id || id), vote:vote===undefined?null:vote })
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Не удалось синхронизировать голоса.');
@@ -133,10 +134,7 @@
       root.querySelectorAll('[data-vote]').forEach(item => { item.disabled = false; });
     }
   }));
-  syncCommunityVotes().catch(error => {
-    const caption = root.querySelector('.community-score-caption:last-child');
-    if (caption) caption.textContent = `${error.message} Проверьте подключение общего хранилища Netlify.`;
-  });
+  fetch(`/api/database?action=vote&projectId=${encodeURIComponent(project.id||id)}`,{credentials:'same-origin'}).then(async response=>{const result=await response.json();if(!response.ok)throw Error(result.error||'Не удалось загрузить рейтинг.');votes={...votes,...result,voters:votes.voters};paint(votes.vote?voteSavedLabel:'Общий рейтинг загружен из базы Netlify.');}).catch(error=>{const caption=root.querySelector('.community-score-caption:last-child');if(caption)caption.textContent=`${error.message} Войдите, чтобы синхронизировать голос.`;});
   const mentorForm = root.querySelector('#mentor-review-form');
   mentorForm?.addEventListener('submit', event => { event.preventDefault(); const score = Number(mentorForm.elements.mentorScore.value); if (!Number.isInteger(score) || score < 0 || score > 100) return; const key = `buro-project-scores-${project.id || id}`; const current = JSON.parse(localStorage.getItem(key) || '{}'); current.mentor = score; current.mentorNote = mentorForm.elements.mentorNote.value.trim(); localStorage.setItem(key, JSON.stringify(current)); location.reload(); });
   const mediaForm = root.querySelector('#project-media-form');
@@ -145,6 +143,6 @@
   function saveMedia(){const list=JSON.parse(localStorage.getItem('buro-startapov-projects-v1')||'[]'),item=list.find(entry=>entry.id===(project.id||id));if(!item)return;item.media=media;localStorage.setItem('buro-startapov-projects-v1',JSON.stringify(list));drawMedia();const hero=root.querySelector('.project-art');if(hero){hero.innerHTML=media.length?renderMedia(media[0]):defaultCoverHtml;hero.classList.toggle('has-cover-media',Boolean(media.length));}}
   drawMedia();
   mediaForm?.addEventListener('submit',async event=>{event.preventDefault();const files=[...mediaForm.elements.media.files];if(!files.length)return;const status=mediaForm.querySelector('[role=status]');if(media.reduce((sum,item)=>sum+Number(item.bytes||Math.ceil((item.src?.length||0)*3/4)),0)+files.reduce((sum,file)=>sum+file.size,0)>3*1024*1024){status.textContent='Суммарный размер медиа не должен превышать 3 МБ.';return;}const added=await Promise.all(files.map(file=>new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve({src:reader.result,type:file.type.startsWith('video/')?'video':'image',name:file.name,bytes:file.size});reader.onerror=()=>resolve(null);reader.readAsDataURL(file)})));media.push(...added.filter(Boolean));saveMedia();mediaForm.reset();status.textContent='Медиа добавлены и сохранены.';});
-  root.querySelector('#delete-startup')?.addEventListener('click',()=>{if(!confirm('Удалить этот стартап из вашего каталога?'))return;const list=JSON.parse(localStorage.getItem('buro-startapov-projects-v1')||'[]').filter(entry=>entry.id!==(project.id||id)||entry.ownerEmail!==account.email);localStorage.setItem('buro-startapov-projects-v1',JSON.stringify(list));location.href='profile.html'});
+  root.querySelector('#delete-startup')?.addEventListener('click',async()=>{if(!confirm('Удалить этот стартап из вашего каталога?'))return;const response=await fetch('/api/database',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'delete-project',projectId:project.id||id})});if(!response.ok){alert((await response.json()).error||'Не удалось удалить проект из базы.');return;}const list=JSON.parse(localStorage.getItem('buro-startapov-projects-v1')||'[]').filter(entry=>entry.id!==(project.id||id)||entry.ownerEmail!==account.email);localStorage.setItem('buro-startapov-projects-v1',JSON.stringify(list));location.href='profile.html'});
   function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]); }
 })();

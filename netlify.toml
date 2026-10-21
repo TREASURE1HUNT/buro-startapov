@@ -17,6 +17,11 @@
   to = "/.netlify/functions/community-votes"
   status = 200
 
+[[redirects]]
+  from = "/api/database"
+  to = "/.netlify/functions/database"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
