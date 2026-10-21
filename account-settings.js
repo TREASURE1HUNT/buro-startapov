@@ -14,7 +14,7 @@
   const roleLabels = { startup: 'Стартапер', investor: 'Инвестор', mentor: 'Наставник' };
   const avatar = account.avatar ? `<img class="account-avatar-preview" src="${escape(account.avatar)}" alt="Фото профиля">` : '<span class="account-avatar-placeholder">✳</span>';
   root.innerHTML = `
-    <div class="account-settings-head"><div><div class="section-index">[ ПРОФИЛЬ УЧАСТНИКА ]</div><h2 id="account-settings-title">Настройки аккаунта<span class="gradient-text">.</span></h2><p>Данные профиля и учётная запись сохраняются в этом браузере.</p></div><div class="account-avatar">${avatar}</div></div>
+    <div class="account-settings-head"><div><div class="section-index">[ ПРОФИЛЬ УЧАСТНИКА ]</div><h2 id="account-settings-title">Настройки аккаунта<span class="gradient-text">.</span></h2><p>Данные профиля и учётная запись сохраняются в базе Netlify.</p></div><div class="account-avatar">${avatar}</div></div>
     <form id="account-profile-form" class="project-form account-form">
       <div class="form-intro"><span>ЛИЧНЫЕ ДАННЫЕ</span><span class="mono">${escape(roleLabels[account.role] || 'Участник')}</span></div>
       <div class="form-row"><label>Имя<input name="name" required maxlength="100" autocomplete="name" value="${escape(account.name || account.fullName || '')}"></label><label>Email<input name="email" required type="email" maxlength="254" autocomplete="email" value="${escape(account.email || '')}"></label></div>

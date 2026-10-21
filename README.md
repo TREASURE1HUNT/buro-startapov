@@ -26,3 +26,10 @@ node server.js
 ## Netlify
 
 Repository settings in Netlify: **Add new site → Import an existing project → GitHub → TREASURE1HUNT/buro-startapov**. Build command can stay empty; publish directory is `.` from `netlify.toml`. Add environment variables `INFERENCE_BASE_URL=https://inference.dahl.global/v1`, `INFERENCE_MODEL=zai-org/GLM-5.3-Flash`, and `INFERENCE_API_KEY` in the Netlify dashboard, then deploy. Never put the actual key in Git or frontend code. The Netlify functions power AI analysis and chat. The local Node API also supports registration/login; persistent accounts on Netlify need an external database/auth provider, while the current browser-only demo profile is not synchronized across devices.
+# Хранилище сайта
+
+Производственная база Netlify Database (Postgres) подключена для проекта `buro-startapov`. Схема описана в `netlify/database/migrations/0001_core/migration.sql`; Netlify применяет миграции при production deploy. Функция `/.netlify/functions/database` использует `@netlify/database` и хранит аккаунты/сессии, проекты и медиа, голоса сообщества и пользовательские записи (настройки, черновики, избранное, оценки и историю поддержки). Пароли обрабатываются на сервере, сессии выдаются в HttpOnly cookie.
+
+Для старых браузерных аккаунтов добавлен перенос при первом открытии с сохранённой локальной сессией; при первом входе старый пароль проверяется и аккаунт переносится вместе с проектами и пользовательскими данными. Голоса, сохранённые предыдущей версией в Netlify Blobs, переносятся в Postgres при первом обращении к рейтингу проекта.
+
+Локальная разработка: `netlify dev` поднимает локальную базу Netlify Database и применяет migrations из `netlify/database/migrations`.

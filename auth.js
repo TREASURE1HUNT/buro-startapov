@@ -1,10 +1,10 @@
 (() => {
   const accountKey='buro-demo-account', usersKey='buro-browser-users-v1', projectKey='buro-startapov-projects-v1';
   const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}};
-  const records=()=>Object.fromEntries(Object.keys(localStorage).filter(key=>key.startsWith('buro-')&&!['buro-demo-account','buro-browser-users-v1',projectKey].includes(key)).map(key=>[key,read(key,null)]));
+  const records=()=>Object.fromEntries(Object.keys(localStorage).filter(key=>key.startsWith('buro-')&&!key.startsWith('buro-community-')&&!['buro-demo-account','buro-browser-users-v1',projectKey].includes(key)).map(key=>[key,read(key,null)]));
   const projectsFor=email=>read(projectKey,[]).filter(item=>String(item.ownerEmail||'').toLowerCase()===email);
   const call=async body=>{const response=await fetch('/api/database',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw Object.assign(new Error(data.error||'Ошибка сервера.'),{status:response.status});return data;};
-  function cacheState(data){if(data.account)localStorage.setItem(accountKey,JSON.stringify(data.account));for(const [key,value] of Object.entries(data.records||{}))localStorage.setItem(key,JSON.stringify(value));if(Array.isArray(data.projects)){const local=read(projectKey,[]).filter(p=>String(p.ownerEmail||'').toLowerCase()!==data.account?.email);localStorage.setItem(projectKey,JSON.stringify([...local,...data.projects]));}}
+  function cacheState(data){if(data.account)localStorage.setItem(accountKey,JSON.stringify(data.account));for(const [key,value] of Object.entries(data.records||{}))localStorage.setItem(key,JSON.stringify(value));if(Array.isArray(data.projects)){const local=read(projectKey,[]).filter(p=>String(p.ownerEmail||'').toLowerCase()!==data.account?.email);localStorage.setItem(projectKey,JSON.stringify([...local,...data.projects]));}localStorage.removeItem(usersKey);}
   const register=document.querySelector('#register-form');
   if(location.hash==='#investor'){const option=document.querySelector('input[name=role][value=investor]');if(option){option.checked=true;option.dispatchEvent(new Event('change',{bubbles:true}));}}
   if(register)register.addEventListener('submit',async event=>{

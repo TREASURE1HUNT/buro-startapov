@@ -121,7 +121,7 @@ export default async function handler(req) {
       if(!rows[0])return reply({error:'Этот идентификатор проекта принадлежит другой команде.'},409);
       return reply({project:document});
     }
-    if(body.action==='delete-project') { const rows=await db.sql`DELETE FROM app_projects WHERE id=${String(body.projectId||'')} AND owner_email=${who.email} RETURNING id`; return rows.length?reply({ok:true}):reply({error:'Проект не найден.'},404); }
+    if(body.action==='delete-project') { const rows=await db.sql`DELETE FROM app_projects WHERE id=${String(body.projectId||'')} AND owner_email=${who.email} RETURNING id`;if(rows.length)await db.sql`DELETE FROM app_votes WHERE project_id=${String(body.projectId||'')}`;return rows.length?reply({ok:true}):reply({error:'Проект не найден.'},404); }
     if(body.action==='vote') {
       const projectId=String(body.projectId||'');if(!/^[\p{L}\p{N}_-]{1,100}$/u.test(projectId)||!['up','down',null].includes(body.vote))return reply({error:'Некорректный голос.'},400);
       if(!who)return reply({error:'Войдите в аккаунт, чтобы голосовать.'},401);
