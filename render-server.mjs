@@ -53,19 +53,19 @@ const server = http.createServer(async (req, res) => {
     } catch { res.writeHead(502, { 'content-type': 'application/json' }); return res.end('{"error":"AI-сервис временно недоступен."}'); }
   }
   if (req.method === 'GET' || req.method === 'HEAD') {
-    if (url.pathname.startsWith('/api/')) {
-      res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"error":"Not found"}');
+    if (!url.pathname.startsWith('/api/database')) {
+      if (url.pathname.startsWith('/api/')) { res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"error":"Not found"}'); }
+      try {
+        let relative = decodeURIComponent(url.pathname).replace(/^\/+/, '');
+        if (!relative || relative.endsWith('/')) relative += 'index.html';
+        else if (!path.extname(relative)) relative += '.html';
+        const file = path.resolve(root, relative);
+        if (!file.startsWith(root + path.sep) || relative.split(/[\\/]/).some(part => part.startsWith('.'))) { res.writeHead(403); return res.end('Forbidden'); }
+        const content = await readFile(file);
+        res.writeHead(200, { 'content-type': mimeTypes[path.extname(file).toLowerCase()] || 'application/octet-stream', 'x-content-type-options': 'nosniff' });
+        return req.method === 'HEAD' ? res.end() : res.end(content);
+      } catch { res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }); return res.end('Not Found'); }
     }
-    try {
-      let relative = decodeURIComponent(url.pathname).replace(/^\/+/, '');
-      if (!relative || relative.endsWith('/')) relative += 'index.html';
-      else if (!path.extname(relative)) relative += '.html';
-      const file = path.resolve(root, relative);
-      if (!file.startsWith(root + path.sep) || relative.split(/[\\/]/).some(part => part.startsWith('.'))) { res.writeHead(403); return res.end('Forbidden'); }
-      const content = await readFile(file);
-      res.writeHead(200, { 'content-type': mimeTypes[path.extname(file).toLowerCase()] || 'application/octet-stream', 'x-content-type-options': 'nosniff' });
-      return req.method === 'HEAD' ? res.end() : res.end(content);
-    } catch { res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }); return res.end('Not Found'); }
   }
   if (!url.pathname.startsWith('/api/database')) { res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{"error":"Not found"}'); }
   try {
