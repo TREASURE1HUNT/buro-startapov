@@ -141,6 +141,11 @@ html{color-scheme:dark!important;background:#080809!important}
 *:not(img):not(video):not(picture):not(svg):not(:has(img,video)){filter:grayscale(1)!important}
 img,video,picture,.media-item:has(img,video),.catalog-preview:has(img,video),.showcase-art:has(img,video),.project-media:has(img,video),.startup-media:has(img,video){filter:none!important}
 .media-item:has(img,video) img,.media-item:has(img,video) video,.catalog-preview img,.catalog-preview video,.showcase-art img,.showcase-art video,.project-media img,.project-media video,.startup-media img,.startup-media video{filter:none!important;color-scheme:normal}
+
+/* Leaderboard score table: remove its enclosing box, retain only row separators. */
+.leader-panel{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;padding:0!important}
+.leader-table-head{border-top:1px solid #ffffff24!important;border-bottom:1px solid #ffffff24!important}
+.leader-row{border-bottom:1px solid #ffffff24!important}
 html body{background:var(--capital-bg);color:var(--capital-ink)}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 78% 12%,rgba(104,82,169,.13),transparent 31%),radial-gradient(ellipse at 8% 88%,rgba(73,99,148,.08),transparent 32%)}
 .topbar{background:rgba(8,9,11,.88);border-color:var(--capital-line);backdrop-filter:blur(18px)}

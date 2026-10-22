@@ -80,6 +80,7 @@ test('site settings include persistent RU/EN language control and metrics with m
   const html=await readFile(path.join(root,'index.html'),'utf8');
   assert.doesNotMatch(js,/id="site-theme"|themeSelect/); assert.match(js,/site-language/); assert.match(js,/localStorage\.setItem\(settingKey/); assert.match(js,/dataset\.siteTheme = 'dark'/);
   const css=await readFile(path.join(root,'enhancements.css'),'utf8'); assert.match(css,/--green:#f0f0f1/); assert.match(css,/\.header-account-avatar/); assert.match(css,/\.profile-avatar/); assert.match(css,/\.investor-card/); assert.match(css,/\*:not\(img\):not\(video\)/); assert.match(css,/\.media-item:has\(img,video\) img/);
+  assert.match(css,/\.leader-panel\{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;padding:0!important\}/);
   assert.match(js,/page_view/); assert.match(js,/project_view/); assert.match(html,/site-settings\.css/); assert.match(html,/site-settings\.js/);
 });
 
