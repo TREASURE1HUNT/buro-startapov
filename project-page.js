@@ -31,7 +31,8 @@
   const baseScore = Math.round(Number(scores?.ai || 0) * 0.25 + Number(scores?.mentor || 0) * 0.25 + (positive ?? 0) * 0.5);
   const media = Array.isArray(project.media) ? project.media : [];
   const markdown = project.descriptionMarkdown || project.description || '';
-  const renderMarkdown = source => window.renderStartupMarkdown(source);
+  const markdownContext = { githubUrl: project.githubUrl || project.repositoryUrl || project.repoUrl || project.github || '' };
+  const renderMarkdown = source => window.renderStartupMarkdown(source, markdownContext);
   const renderMedia = item => { const src = typeof item === 'string' ? item : item?.src; const type = typeof item === 'string' ? '' : item?.type; if (!src || !/^data:image\/(png|jpe?g|gif|webp|avif);base64,|^data:video\/(mp4|webm|ogg);base64,/.test(src)) return ''; return type === 'video' || src.startsWith('data:video/') ? `<video class="project-cover-video" autoplay muted loop playsinline controls preload="metadata" src="${src}"></video>` : `<img class="project-cover-image" loading="lazy" src="${src}" alt="Обложка стартапа">`; };
   const coverMedia=media[0]; const mediaHtml=media.slice(1).map(renderMedia).join('');
   const editable = account && account.role === 'startup' && account.email === project.ownerEmail;

@@ -120,9 +120,16 @@ test('Firebase auth verifies email and requires a Firebase email link on untrust
 test('startup media ordering rerenders cards and README markdown uses a sanitizer', async () => {
   const enhancements=await readFile(path.join(root,'site-enhancements.js'),'utf8');
   const renderer=await readFile(path.join(root,'markdown-renderer.js'),'utf8');
+  const details=await readFile(path.join(root,'project-page.js'),'utf8');
   const projectHtml=await readFile(path.join(root,'project.html'),'utf8');
   assert.match(enhancements,/\[media\[i\],media\[j\]\]=\[media\[j\],media\[i\]\];renderMedia\(\)/);
   assert.match(renderer,/marked\.parse\(text/); assert.match(renderer,/DOMPurify\.sanitize/);
+  assert.match(renderer,/raw\.githubusercontent\.com/); assert.match(renderer,/context\.githubUrl/); assert.match(renderer,/loading', 'lazy'/);
+  assert.match(details,/markdownContext = \{ githubUrl:/);
+  const css=await readFile(path.join(root,'enhancements.css'),'utf8');
+  assert.match(css,/\.project-art\.has-cover-media\{padding:0!important/);
+  assert.match(css,/\.markdown-rendered img\{border:1px solid #343438!important/);
+  assert.match(css,/\.markdown-rendered p,.project-detail-main \.markdown-rendered li[^}]*color:#d4d4d7!important/);
   assert.match(projectHtml,/vendor\/marked\.umd\.js/); assert.match(projectHtml,/vendor\/purify\.min\.js/);
 });
 
