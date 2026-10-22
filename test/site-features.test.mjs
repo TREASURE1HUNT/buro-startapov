@@ -31,6 +31,13 @@ test('startup upload accepts larger promo clips while enforcing 8 MB per video a
   assert.match(detail,/files\.some\(file=>file\.type\.startsWith\('video\/'\)&&file\.size>8\*1024\*1024\)/); assert.match(detail,/>10\*1024\*1024/);
 });
 
+test('admin analytics supports visitor counts across date ranges and day/week/month/year buckets', async () => {
+  const admin=await readFile(path.join(root,'render/admin-server.mjs'),'utf8'), server=await readFile(path.join(root,'render-server.mjs'),'utf8'), settings=await readFile(path.join(root,'site-settings.js'),'utf8'), html=await readFile(path.join(root,'admin/index.html'),'utf8'), app=await readFile(path.join(root,'admin/app.js'),'utf8'), migration=await readFile(path.join(root,'netlify/database/migrations/0005_visitor_analytics/migration.sql'),'utf8');
+  for(const group of ['day','week','month','year'])assert.match(html,new RegExp(`value="${group}"`));
+  assert.match(settings,/site-analytics-visitor-id/); assert.match(server,/visitor_id\) VALUES/); assert.match(migration,/ADD COLUMN IF NOT EXISTS visitor_id TEXT/);
+  assert.match(admin,/count\(DISTINCT visitor_id\)/); assert.match(admin,/date_trunc\(\$3,created_at\)/); assert.match(admin,/\['day','week','month','year'\]/); assert.match(html,/analytics-from/); assert.match(html,/analytics-to/); assert.match(app,/УНИКАЛЬНЫЕ ПОСЕТИТЕЛИ/);
+});
+
 test('AI score is derived from six weighted criteria and returns evidence/gaps', async () => {
   const criteria = { problem:100, demand:90, customer:80, solution:70, business:60, execution:50 };
   globalThis.fetch = async (url, options) => {

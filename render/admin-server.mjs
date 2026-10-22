@@ -19,7 +19,7 @@ const configs = {
   app_votes: { key: ['project_id','voter_key'], columns: ['project_id','voter_key','vote','updated_at'], editable: ['vote'] },
   app_records: { key: ['owner_email','record_key'], columns: ['owner_email','record_key','value','updated_at'], editable: ['value'] },
   app_sessions: { key: 'token_hash', columns: ['token_hash','email','expires_at','created_at'], editable: ['expires_at'] },
-  app_analytics: { key: 'id', columns: ['id','event_name','route','project_id','created_at'], editable: ['event_name','route','project_id'] },
+  app_analytics: { key: 'id', columns: ['id','event_name','route','project_id','visitor_id','created_at'], editable: ['event_name','route','project_id'] },
   schema_migrations: { key: 'version', columns: ['version','applied_at'], editable: [] },
 };
 const send = (res, status, data, headers = {}) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers }); res.end(JSON.stringify(data)); };
@@ -43,12 +43,19 @@ const server = http.createServer(async (req, res) => {
     if (!authed(req)) return send(res, 401, { error: 'Войдите в панель администратора.' });
     try {
       if (req.method === 'GET' && url.pathname === '/api/admin/metrics') {
-        const [counts, daily, popular] = await Promise.all([
+        const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(`${value}T00:00:00Z`))&&new Date(`${value}T00:00:00Z`).toISOString().slice(0,10)===value;
+        const to=url.searchParams.get('to')||new Date().toISOString().slice(0,10);
+        const defaultFrom=new Date(Date.now()-29*86400000).toISOString().slice(0,10);
+        const from=url.searchParams.get('from')||defaultFrom;
+        const grouping=url.searchParams.get('group')||'day';
+        if(!validDate(from)||!validDate(to)||!['day','week','month','year'].includes(grouping)||from>to)return send(res,400,{error:'Укажите корректный диапазон дат и группировку.'});
+        const [counts, daily, popular, audience] = await Promise.all([
           pool.query(`SELECT (SELECT count(*) FROM app_accounts)::int AS accounts,(SELECT count(*) FROM app_projects)::int AS projects,(SELECT count(*) FROM app_votes)::int AS votes,(SELECT count(*) FROM app_records)::int AS records,(SELECT count(*) FROM app_analytics)::int AS events`),
-          pool.query(`SELECT date_trunc('day',created_at)::date AS day,count(*) FILTER (WHERE event_name IN ('page_view','project_view'))::int AS views,count(*) FILTER (WHERE event_name='signup')::int AS signups,count(*) FILTER (WHERE event_name='project_create')::int AS projects,count(*) FILTER (WHERE event_name='vote')::int AS votes,count(*) FILTER (WHERE event_name='ai_evaluation')::int AS ai_evaluations FROM app_analytics WHERE created_at>=now()-interval '30 days' GROUP BY 1 ORDER BY 1`),
-          pool.query(`SELECT project_id,count(*)::int AS views FROM app_analytics WHERE event_name='project_view' AND project_id IS NOT NULL GROUP BY project_id ORDER BY views DESC LIMIT 10`),
+          pool.query(`SELECT date_trunc($3,created_at)::date AS day,count(*) FILTER (WHERE event_name IN ('page_view','project_view'))::int AS views,count(DISTINCT visitor_id) FILTER (WHERE event_name IN ('page_view','project_view'))::int AS visitors,count(*) FILTER (WHERE event_name='signup')::int AS signups,count(*) FILTER (WHERE event_name='project_create')::int AS projects,count(*) FILTER (WHERE event_name='vote')::int AS votes,count(*) FILTER (WHERE event_name='ai_evaluation')::int AS ai_evaluations FROM app_analytics WHERE created_at >= $1::date AND created_at < ($2::date + interval '1 day') GROUP BY 1 ORDER BY 1`,[from,to,grouping]),
+          pool.query(`SELECT project_id,count(*)::int AS views FROM app_analytics WHERE event_name='project_view' AND project_id IS NOT NULL AND created_at >= $1::date AND created_at < ($2::date + interval '1 day') GROUP BY project_id ORDER BY views DESC LIMIT 10`,[from,to]),
+          pool.query(`SELECT count(*) FILTER (WHERE event_name IN ('page_view','project_view'))::int AS views,count(DISTINCT visitor_id) FILTER (WHERE event_name IN ('page_view','project_view'))::int AS visitors FROM app_analytics WHERE created_at >= $1::date AND created_at < ($2::date + interval '1 day')`,[from,to]),
         ]);
-        return send(res, 200, { counts: counts.rows[0], daily: daily.rows, popular: popular.rows });
+        return send(res, 200, { counts: counts.rows[0], daily: daily.rows, popular: popular.rows, audience: audience.rows[0], range: { from, to, group: grouping } });
       }
       if (req.method === 'GET' && url.pathname === '/api/admin/tables') return send(res, 200, { tables: Object.keys(configs) });
       const match = url.pathname.match(/^\/api\/admin\/table\/([a-z_]+)$/);

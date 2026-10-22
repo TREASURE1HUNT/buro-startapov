@@ -20,7 +20,7 @@ async function migrate() {
     await client.query('BEGIN');
     await client.query("SELECT pg_advisory_xact_lock(hashtext('buro-startapov-migrations'))");
     await client.query('CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())');
-    for (const version of ['0001_core', '0002_analytics', '0003_unicornbase_seed', '0004_email_auth']) {
+    for (const version of ['0001_core', '0002_analytics', '0003_unicornbase_seed', '0004_email_auth', '0005_visitor_analytics']) {
       const applied = await client.query('SELECT version FROM schema_migrations WHERE version=$1', [version]);
       if (!applied.rows.length) {
         const sql = await readFile(path.join(root, `netlify/database/migrations/${version}/migration.sql`), 'utf8');
@@ -50,8 +50,9 @@ const server = http.createServer(async (req, res) => {
       const event = String(data.event || '');
       if (!allowed.has(event)) { res.writeHead(400, { 'content-type': 'application/json' }); return res.end('{"error":"Invalid event"}'); }
       const projectId = /^[\p{L}\p{N}_-]{1,100}$/u.test(String(data.projectId || '')) ? String(data.projectId) : null;
+      const visitorId = /^[a-f0-9-]{32,36}$/i.test(String(data.visitorId || '')) ? String(data.visitorId) : null;
       const route = String(data.route || '/').slice(0, 160).replace(/[?#].*$/, '');
-      await getDatabase().sql`INSERT INTO app_analytics(event_name,route,project_id) VALUES(${event},${route},${projectId})`;
+      await getDatabase().sql`INSERT INTO app_analytics(event_name,route,project_id,visitor_id) VALUES(${event},${route},${projectId},${visitorId})`;
       res.writeHead(202, { 'content-type': 'application/json', 'cache-control': 'no-store' }); return res.end('{"ok":true}');
     } catch { res.writeHead(400, { 'content-type': 'application/json' }); return res.end('{"error":"Invalid analytics event"}'); }
   }

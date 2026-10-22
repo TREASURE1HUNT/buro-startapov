@@ -26,7 +26,8 @@
     });
   }
   function record(event, projectId) {
-    const data = JSON.stringify({ event, route:location.pathname, ...(projectId ? { projectId } : {}) });
+    let visitorId='';try{visitorId=localStorage.getItem('site-analytics-visitor-id')||'';if(!/^[a-f0-9-]{32,36}$/i.test(visitorId)){visitorId=crypto.randomUUID();localStorage.setItem('site-analytics-visitor-id',visitorId)}}catch{visitorId=`tab-${Date.now()}-${Math.random().toString(36).slice(2)}`}
+    const data = JSON.stringify({ event, route:location.pathname, visitorId, ...(projectId ? { projectId } : {}) });
     if (navigator.sendBeacon) navigator.sendBeacon('/api/analytics', new Blob([data], {type:'application/json'}));
     else fetch('/api/analytics',{method:'POST',headers:{'content-type':'application/json'},body:data,keepalive:true}).catch(()=>{});
   }
