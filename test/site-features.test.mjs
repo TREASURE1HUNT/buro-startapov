@@ -86,6 +86,11 @@ test('site settings include persistent RU/EN language control and metrics with m
   assert.match(js,/page_view/); assert.match(js,/project_view/); assert.match(html,/site-settings\.css/); assert.match(html,/site-settings\.js/);
 });
 
+test('signed-in header hides account signup and always exposes investors navigation', async () => {
+  const js=await readFile(path.join(root,'account-ui.js'),'utf8');
+  assert.match(js,/\.nav a\[href="register\.html"\]/); assert.match(js,/investors\.html/); assert.match(js,/nav\.insertBefore\(investors,create\|\|null\)/);
+});
+
 test('evaluations are attached to the saved public project document and its details page', async () => {
   const save=await readFile(path.join(root,'site-enhancements.js'),'utf8');
   const details=await readFile(path.join(root,'project-page.js'),'utf8');
