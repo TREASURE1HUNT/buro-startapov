@@ -136,8 +136,11 @@ html[data-site-theme="light"] .project-form input,html[data-site-theme="light"] 
 .showcase-card,.showcase-link,.showcase-stage,.showcase-open,.showcase-top-meta,.showcase-bottom-copy,.ranking-showcase,.ranking-showcase *{border-color:#454549!important}
 .showcase-stage,.showcase-link{box-shadow:24px 34px 45px #0009,-7px 0 0 #262629,0 0 55px #ffffff0b!important}.showcase-stage:after{background:linear-gradient(120deg,#ffffff12,transparent 34%,transparent 65%,#ffffff08)!important}.showcase-top-meta,.showcase-open{color:#ededee!important}.showcase-scrim{background:linear-gradient(0deg,#080809 0%,#080809e8 38%,#08080980 67%,#08080920 100%)!important}
 
-/* Last-resort site-wide monochrome enforcement: also catches legacy and inline colors. */
-html{filter:grayscale(1)!important;color-scheme:dark!important;background:#080809!important}
+/* Monochrome UI while preserving original color in uploaded startup media. */
+html{color-scheme:dark!important;background:#080809!important}
+*:not(img):not(video):not(picture):not(svg):not(:has(img,video)){filter:grayscale(1)!important}
+img,video,picture,.media-item:has(img,video),.catalog-preview:has(img,video),.showcase-art:has(img,video),.project-media:has(img,video),.startup-media:has(img,video){filter:none!important}
+.media-item:has(img,video) img,.media-item:has(img,video) video,.catalog-preview img,.catalog-preview video,.showcase-art img,.showcase-art video,.project-media img,.project-media video,.startup-media img,.startup-media video{filter:none!important;color-scheme:normal}
 html body{background:var(--capital-bg);color:var(--capital-ink)}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 78% 12%,rgba(104,82,169,.13),transparent 31%),radial-gradient(ellipse at 8% 88%,rgba(73,99,148,.08),transparent 32%)}
 .topbar{background:rgba(8,9,11,.88);border-color:var(--capital-line);backdrop-filter:blur(18px)}
