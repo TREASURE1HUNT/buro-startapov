@@ -467,3 +467,7 @@ window.siteTranslationsEN = {
   "Фото": "Photo",
   "Видео": "Video"
 };
+
+Object.assign(window.siteTranslationsEN,{
+  'Продукт':'Product','Рынок':'Market','Раунд':'Round','Инвестиционный запрос':'Investment request','Новости и обновления':'News and updates','Компания и команда':'Company and team','ОСНОВАТЕЛЬ':'FOUNDER','ОСНОВАТЕЛЬ':'FOUNDER','Оценка появится после анализа описания проекта.':'The score will appear after the project description is analyzed.','Не указана':'Not specified','Не указано':'Not specified','Не указаны':'Not specified','Стартап':'Startup','Идея':'Idea','Прототип':'Prototype','Проверка проблемы':'Problem validation','MVP и тестирование':'MVP and testing','Написать команде ↗':'Contact the team ↗','Связаться по инвестициям ↗':'Discuss investment ↗','Готовность':'Readiness','Оценка сообщества':'Community rating','Оценка ИИ':'AI score','Оценка наставника':'Mentor score','Итоговый балл':'Total score','Проблема клиента':'Customer problem','Сохранить оценку':'Save review','К проектам ↗':'Back to projects ↗','Профиль стартапа':'Startup profile','Описание пока не добавлено.':'No description has been added yet.','Команда не указана':'Team not specified','Контакт пока не указан. Команда может добавить его при создании проекта.':'No contact provided yet. The team can add one when creating the project.'
+});

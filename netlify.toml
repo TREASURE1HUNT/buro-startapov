@@ -13,6 +13,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/translate"
+  to = "/.netlify/functions/translate"
+  status = 200
+
+[[redirects]]
   from = "/api/community-votes"
   to = "/.netlify/functions/community-votes"
   status = 200

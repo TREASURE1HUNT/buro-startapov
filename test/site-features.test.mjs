@@ -9,6 +9,21 @@ process.env.INFERENCE_API_KEY = 'test-token-not-for-production';
 process.env.INFERENCE_BASE_URL = 'https://inference.example.test/v1';
 process.env.INFERENCE_MODEL = 'test-model';
 const { default: evaluate } = await import('../.netlify/functions/evaluate.mjs');
+const { default: translate } = await import('../.netlify/functions/translate.mjs');
+
+test('startup content translation preserves item order and validates bounded input', async () => {
+  globalThis.fetch = async (url, options) => { assert.equal(url,'https://inference.example.test/v1/chat/completions'); return new Response(JSON.stringify({ choices:[{message:{content:'["A useful product description", "A customer problem"]'}}] }), {status:200}); };
+  const response=await translate(new Request('https://example.test/api/translate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({language:'en',texts:['Полезное описание продукта','Проблема клиента']})}));
+  assert.equal(response.status,200); assert.deepEqual((await response.json()).translations,['A useful product description','A customer problem']);
+  const invalid=await translate(new Request('https://example.test/api/translate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({language:'xx',texts:['x']})}));
+  assert.equal(invalid.status,400);
+});
+
+test('startup page enforces responsive markdown and contrast-aware project colors', async () => {
+  const project=await readFile(path.join(root,'project-page.js'),'utf8'), css=await readFile(path.join(root,'enhancements.css'),'utf8');
+  assert.match(project,/luminance>\.42/); assert.match(project,/dataset\.projectSurface/); assert.match(project,/translateProjectContent/);
+  assert.match(css,/\.markdown-rendered pre[^}]*overflow:auto/); assert.match(css,/overflow-wrap:anywhere/); assert.match(css,/data-site-theme="light"\] \.hero h1/);
+});
 
 test('AI score is derived from six weighted criteria and returns evidence/gaps', async () => {
   const criteria = { problem:100, demand:90, customer:80, solution:70, business:60, execution:50 };
