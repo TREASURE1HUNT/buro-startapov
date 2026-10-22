@@ -83,6 +83,14 @@ test('startup media ordering rerenders cards and README markdown uses a sanitize
   assert.match(projectHtml,/vendor\/marked\.umd\.js/); assert.match(projectHtml,/vendor\/purify\.min\.js/);
 });
 
+test('Render serves support requests through the deployed language-aware handler', async () => {
+  const server=await readFile(path.join(root,'render-server.mjs'),'utf8');
+  const support=await readFile(path.join(root,'.netlify/functions/support.mjs'),'utf8');
+  assert.match(server,/import supportHandler from '\.\/\.netlify\/functions\/support\.mjs'/);
+  assert.match(server,/if \(url\.pathname === '\/api\/support'\)[\s\S]*?supportHandler\(/);
+  assert.match(support,/payload\.language === 'en'/);
+});
+
 test('English dictionary covers Russian strings rendered in the page templates', async () => {
   const htmlFiles=(await import('node:fs/promises')).readdir(root);
   const dictionary=JSON.parse(await readFile(path.join(root,'deliverables/translations-en.json'),'utf8'));
