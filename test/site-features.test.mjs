@@ -83,6 +83,7 @@ test('site settings include persistent RU/EN language control and metrics with m
   assert.match(css,/\.leader-panel\{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;padding:0!important\}/);
   assert.match(css,/body:has\(\.leaderboard\):before\{display:none!important\}/); assert.match(css,/\.leaderboard\{background:transparent!important\}/);
   assert.match(css,/\.ranking-showcase,\.ranking-carousel,\.ranking-track,\.showcase-card,\.showcase-link\{background:#080809!important\}/);
+  const home=await readFile(path.join(root,'index.html'),'utf8'); assert.doesNotMatch(home,/class="academy-console"/); assert.match(css,/\.proof-score strong\{color:#222!important\}/); assert.match(css,/\.proof-split span\{color:#595959!important\}/);
   assert.match(js,/page_view/); assert.match(js,/project_view/); assert.match(html,/site-settings\.css/); assert.match(html,/site-settings\.js/);
 });
 

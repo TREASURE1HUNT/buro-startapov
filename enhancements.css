@@ -152,6 +152,17 @@ body:has(.leaderboard):before{display:none!important}
 .leaderboard{background:transparent!important}
 /* The top-startups carousel must blend into the same deep black page surface. */
 .ranking-showcase,.ranking-carousel,.ranking-track,.showcase-card,.showcase-link{background:#080809!important}
+/* Homepage cleanup and accessible monochrome contrast for the scoring card. */
+.academy-hero{grid-template-columns:minmax(0,1fr);min-height:min(760px,calc(100svh - 65px));}
+.academy-hero-copy{max-width:900px;width:100%}
+.academy-console{display:none!important}
+.proof-card{background:#f1f1f1!important;color:#151515!important;border:1px solid #d3d3d3!important;box-shadow:0 18px 55px #0005!important;filter:none!important}
+.proof-card-top,.proof-card-bottom{color:#555!important}
+.proof-score strong{color:#222!important}.proof-score span{color:#555!important}
+.proof-meter{background:#c9c9c9!important}.proof-meter i{background:#555!important}
+.proof-split{border-color:#d0d0d0!important}.proof-split div+div{border-color:#d0d0d0!important}.proof-split b{color:#222!important}.proof-split span{color:#595959!important}
+html[data-site-theme="light"] .proof-card{background:#f1f1f1!important;color:#151515!important}
+@media(max-width:760px){.academy-hero{padding-top:68px;padding-bottom:68px}.academy-hero-copy h1{max-width:800px}}
 html body{background:var(--capital-bg);color:var(--capital-ink)}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 78% 12%,rgba(104,82,169,.13),transparent 31%),radial-gradient(ellipse at 8% 88%,rgba(73,99,148,.08),transparent 32%)}
 .topbar{background:rgba(8,9,11,.88);border-color:var(--capital-line);backdrop-filter:blur(18px)}
