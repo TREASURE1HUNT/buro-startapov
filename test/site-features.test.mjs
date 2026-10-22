@@ -122,6 +122,7 @@ test('startup media ordering rerenders cards and README markdown uses a sanitize
   const renderer=await readFile(path.join(root,'markdown-renderer.js'),'utf8');
   const details=await readFile(path.join(root,'project-page.js'),'utf8');
   const projectHtml=await readFile(path.join(root,'project.html'),'utf8');
+  assert.doesNotThrow(()=>new Function(renderer)); assert.doesNotThrow(()=>new Function(details));
   assert.match(enhancements,/\[media\[i\],media\[j\]\]=\[media\[j\],media\[i\]\];renderMedia\(\)/);
   assert.match(renderer,/marked\.parse\(text/); assert.match(renderer,/DOMPurify\.sanitize/);
   assert.match(renderer,/raw\.githubusercontent\.com/); assert.match(renderer,/context\.githubUrl/); assert.match(renderer,/loading', 'lazy'/);
