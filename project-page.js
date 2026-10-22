@@ -31,21 +31,7 @@
   const baseScore = Math.round(Number(scores?.ai || 0) * 0.25 + Number(scores?.mentor || 0) * 0.25 + (positive ?? 0) * 0.5);
   const media = Array.isArray(project.media) ? project.media : [];
   const markdown = project.descriptionMarkdown || project.description || '';
-  const renderMarkdown = source => {
-    const codeBlocks = [];
-    let html = escapeHtml(source).replace(/```(?:[a-z0-9_-]+)?\n([\s\S]*?)```/gi, (_, code) => { const marker = `@@CODE${codeBlocks.length}@@`; codeBlocks.push(`<pre class="md-code"><code>${code}</code></pre>`); return marker; });
-    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>').replace(/^## (.+)$/gm, '<h2>$1</h2>').replace(/^# (.+)$/gm, '<h2>$1</h2>')
-      .replace(/^> ?(.+)$/gm, '<blockquote>$1</blockquote>')
-      .replace(/^[-*] \[x\] (.+)$/gim, '<li class="md-task checked">$1</li>').replace(/^[-*] \[ \] (.+)$/gm, '<li class="md-task">$1</li>')
-      .replace(/^[-*] (.+)$/gm, '<li>$1</li>').replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-      .replace(/^---+$/gm, '<hr>')
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/(?:<li(?:\s[^>]*)?>.*<\/li>\n?)+/gs, match => `<ul>${match}</ul>`)
-      .replace(/(?:^|\n)(?!<h[23]|<li|<blockquote|<hr|<ul|@@CODE)([^\n]+)(?=\n|$)/g, '<p>$1</p>').replace(/\n/g, '<br>');
-    codeBlocks.forEach((block, index) => { html = html.replaceAll(`@@CODE${index}@@`, block); });
-    return html;
-  };
+  const renderMarkdown = source => window.renderStartupMarkdown(source);
   const renderMedia = item => { const src = typeof item === 'string' ? item : item?.src; const type = typeof item === 'string' ? '' : item?.type; if (!src || !/^data:image\/(png|jpe?g|gif|webp|avif);base64,|^data:video\/(mp4|webm|ogg);base64,/.test(src)) return ''; return type === 'video' || src.startsWith('data:video/') ? `<video class="project-cover-video" autoplay muted loop playsinline controls preload="metadata" src="${src}"></video>` : `<img class="project-cover-image" loading="lazy" src="${src}" alt="Обложка стартапа">`; };
   const coverMedia=media[0]; const mediaHtml=media.slice(1).map(renderMedia).join('');
   const editable = account && account.role === 'startup' && account.email === project.ownerEmail;

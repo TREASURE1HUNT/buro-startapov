@@ -14,14 +14,14 @@
   const roleLabels = { startup: 'Стартапер', investor: 'Инвестор', mentor: 'Наставник' };
   const avatar = account.avatar ? `<img class="account-avatar-preview" src="${escape(account.avatar)}" alt="Фото профиля">` : '<span class="account-avatar-placeholder">✳</span>';
   root.innerHTML = `
-    <div class="account-settings-head"><div><div class="section-index">[ ПРОФИЛЬ УЧАСТНИКА ]</div><h2 id="account-settings-title">Настройки аккаунта<span class="gradient-text">.</span></h2><p>Данные профиля и учётная запись сохраняются в базе Netlify.</p></div><div class="account-avatar">${avatar}</div></div>
+    <div class="account-settings-head"><div><div class="section-index">[ ПРОФИЛЬ УЧАСТНИКА ]</div><h2 id="account-settings-title">Настройки аккаунта<span class="gradient-text">.</span></h2><p>Данные профиля и учётная запись сохраняются в базе Render.</p></div><div class="account-avatar-picker"><button class="account-avatar account-avatar-button" id="account-avatar-trigger" type="button" aria-label="Изменить фото профиля">${avatar}<span class="account-avatar-overlay" aria-hidden="true">＋</span></button><input name="avatarFile" class="account-avatar-file" form="account-profile-form" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Выберите фото профиля"><small>Нажмите на круг, чтобы изменить фото</small></div></div>
     <form id="account-profile-form" class="project-form account-form">
       <div class="form-intro"><span>ЛИЧНЫЕ ДАННЫЕ</span><span class="mono">${escape(roleLabels[account.role] || 'Участник')}</span></div>
       <div class="form-row"><label>Имя<input name="name" required maxlength="100" autocomplete="name" value="${escape(account.name || account.fullName || '')}"></label><label>Email<input name="email" required type="email" maxlength="254" autocomplete="email" value="${escape(account.email || '')}"></label></div>
       <label>Роль<select name="role"><option value="startup" ${account.role === 'startup' ? 'selected' : ''}>Стартапер</option><option value="investor" ${account.role === 'investor' ? 'selected' : ''}>Инвестор</option><option value="mentor" ${account.role === 'mentor' ? 'selected' : ''}>Наставник</option></select></label>
       <label>О себе<textarea name="bio" maxlength="600" rows="4" placeholder="Коротко расскажите о себе">${escape(account.bio || '')}</textarea></label>
       <div class="form-row"><label>Город<input name="location" maxlength="100" value="${escape(account.location || '')}" placeholder="Город"></label><label>Сайт или портфолио<input name="website" type="url" maxlength="300" value="${escape(account.website || '')}" placeholder="https://"></label></div>
-      <div class="form-row"><label>Контакт для связи<input name="contact" maxlength="160" value="${escape(account.contact || '')}" placeholder="Telegram, email или телефон"></label><label>Фото профиля<input name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp"></label></div>
+      <label>Контакт для связи<input name="contact" maxlength="160" value="${escape(account.contact || '')}" placeholder="Telegram, email или телефон"></label>
       <div class="investor-extra account-investor-fields" ${account.role === 'investor' ? '' : 'hidden'}><label>Интересующие отрасли<input name="investorFocus" maxlength="160" value="${escape(account.investorFocus || '')}" placeholder="Например: климатические технологии, SaaS"></label><label>Диапазон инвестиций<input name="ticketSize" maxlength="100" value="${escape(account.ticketSize || '')}" placeholder="Например: от 500 тыс. до 5 млн ₽"></label></div>
       <div class="form-actions"><button class="button" type="submit">Сохранить профиль <span>↗</span></button><span id="account-save-result" class="register-result" role="status" aria-live="polite"></span></div>
     </form>
@@ -31,11 +31,14 @@
   const role = profileForm.elements.role;
   const investorFields = root.querySelector('.account-investor-fields');
   role.addEventListener('change', () => { investorFields.hidden = role.value !== 'investor'; });
-  profileForm.elements.avatarFile.addEventListener('change', () => {
+  const avatarInput=profileForm.elements.avatarFile,avatarButton=root.querySelector('#account-avatar-trigger');
+  avatarButton.addEventListener('click',()=>avatarInput.click());
+  avatarInput.addEventListener('change', () => {
     const file = profileForm.elements.avatarFile.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { profileForm.elements.avatarFile.value = ''; root.querySelector('#account-save-result').textContent = 'Фото должно быть не больше 2 МБ.'; return; }
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { profileForm.elements.avatarFile.value = ''; root.querySelector('#account-save-result').textContent = 'Выберите PNG, JPG или WebP.'; }
+    if (file.size > 2 * 1024 * 1024) { avatarInput.value = ''; root.querySelector('#account-save-result').textContent = 'Фото должно быть не больше 2 МБ.'; return; }
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { avatarInput.value = ''; root.querySelector('#account-save-result').textContent = 'Выберите PNG, JPG или WebP.'; return; }
+    const reader=new FileReader();reader.onload=()=>{let img=avatarButton.querySelector('img');if(!img){img=document.createElement('img');img.className='account-avatar-preview';img.alt='Фото профиля';avatarButton.prepend(img);avatarButton.querySelector('.account-avatar-placeholder')?.remove();}img.src=String(reader.result);};reader.readAsDataURL(file);
   });
   profileForm.addEventListener('submit', event => {
     event.preventDefault();
@@ -46,7 +49,7 @@
     const users = read(usersKey, []);
     if (users.some(user => user.email !== oldEmail && user.email === email)) { result.textContent = 'Этот email уже занят другим аккаунтом.'; result.dataset.state = 'error'; return; }
     const updated = { ...account, name: profileForm.elements.name.value.trim(), email, role: role.value, bio: profileForm.elements.bio.value.trim(), location: profileForm.elements.location.value.trim(), website: profileForm.elements.website.value.trim(), contact: profileForm.elements.contact.value.trim(), investorFocus: profileForm.elements.investorFocus.value.trim(), ticketSize: profileForm.elements.ticketSize.value.trim(), updatedAt: new Date().toISOString() };
-    const file = profileForm.elements.avatarFile.files?.[0];
+    const file = avatarInput.files?.[0];
     const persist = async avatarData => {
       if (avatarData) updated.avatar = avatarData;
       try {

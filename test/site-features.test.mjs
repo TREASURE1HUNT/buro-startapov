@@ -61,3 +61,39 @@ test('evaluations are attached to the saved public project document and its deta
   assert.match(details,/project\.aiEvaluation/);
   assert.match(details,/root\.dataset\.aiEvaluation/);
 });
+
+test('account access supports email OTP, new-device trust, and profile avatar control', async () => {
+  const auth=await readFile(path.join(root,'auth.js'),'utf8');
+  const db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8');
+  const migration=await readFile(path.join(root,'netlify/database/migrations/0004_email_auth/migration.sql'),'utf8');
+  const settings=await readFile(path.join(root,'account-settings.js'),'utf8');
+  const login=await readFile(path.join(root,'login.html'),'utf8');
+  assert.match(auth,/verify-email/); assert.match(auth,/verify-login/); assert.match(auth,/deviceId/);
+  assert.match(db,/RESEND_API_KEY/); assert.match(db,/app_trusted_devices/); assert.match(db,/timingSafeEqual/);
+  assert.match(migration,/app_auth_challenges/); assert.match(migration,/email_verified_at/);
+  assert.match(settings,/account-avatar-trigger/); assert.match(login,/href="register\.html"[^>]*>Нет аккаунта\?/);
+});
+
+test('startup media ordering rerenders cards and README markdown uses a sanitizer', async () => {
+  const enhancements=await readFile(path.join(root,'site-enhancements.js'),'utf8');
+  const renderer=await readFile(path.join(root,'markdown-renderer.js'),'utf8');
+  const projectHtml=await readFile(path.join(root,'project.html'),'utf8');
+  assert.match(enhancements,/\[media\[i\],media\[j\]\]=\[media\[j\],media\[i\]\];renderMedia\(\)/);
+  assert.match(renderer,/marked\.parse\(text/); assert.match(renderer,/DOMPurify\.sanitize/);
+  assert.match(projectHtml,/vendor\/marked\.umd\.js/); assert.match(projectHtml,/vendor\/purify\.min\.js/);
+});
+
+test('English dictionary covers Russian strings rendered in the page templates', async () => {
+  const htmlFiles=(await import('node:fs/promises')).readdir(root);
+  const dictionary=JSON.parse(await readFile(path.join(root,'deliverables/translations-en.json'),'utf8'));
+  const parse5=await import('parse5');
+  const missing=new Set();
+  const visit=node=>{
+    if(node.nodeName==='#text'){const value=node.value.trim();if(value&&/[А-Яа-яЁё]/.test(value)&&!dictionary[value])missing.add(value);}
+    for(const attr of node.attrs||[]) if(['placeholder','title','aria-label','alt','content'].includes(attr.name)&&/[А-Яа-яЁё]/.test(attr.value.trim())&&!dictionary[attr.value.trim()])missing.add(attr.value.trim());
+    for(const child of node.childNodes||[])visit(child);
+  };
+  for(const file of (await htmlFiles).filter(name=>name.endsWith('.html')))visit(parse5.parse(await readFile(path.join(root,file),'utf8')));
+  assert.deepEqual([...missing],[]);
+  for(const file of (await htmlFiles).filter(name=>name.endsWith('.html'))){const source=await readFile(path.join(root,file),'utf8');if(source.includes('site-settings.js'))assert.match(source,/translations-en\.js/);}
+});

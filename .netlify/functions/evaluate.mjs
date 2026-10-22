@@ -19,10 +19,11 @@ export default async function handler(req) {
   if (!configuredKey) return error('Добавьте INFERENCE_API_KEY в переменные окружения API.', 503);
   let input;
   try { input = await req.json(); } catch { return error('Некорректный JSON.', 400); }
+  const language = input.language === 'en' ? 'English' : 'Russian';
   const project = Object.fromEntries(['name', 'category', 'stage', 'problem', 'audience', 'value', 'description', 'businessModel', 'markets', 'technologies', 'fundingAsk', 'fundingCurrency', 'fundingGoal', 'teamName', 'teamResponsibility', 'news'].map(key => [key, clampText(input[key])]));
   for (const field of ['name', 'category', 'stage', 'problem', 'audience', 'value']) if (!project[field]) return error('Заполните название, направление, стадию, проблему, аудиторию и ценность проекта.', 400);
   
-  const system = `Ты — аналитик стартапов. Оценивай только данные карточки; не придумывай рынок, клиентов, выручку и результаты. Отмечай отсутствие доказательств и отличай заявление от подтверждённого результата. Верни только корректный JSON без markdown по форме: {"criteria":{"problem":{"score":0,"evidence":"","gap":""},"demand":{"score":0,"evidence":"","gap":""},"customer":{"score":0,"evidence":"","gap":""},"solution":{"score":0,"evidence":"","gap":""},"business":{"score":0,"evidence":"","gap":""},"execution":{"score":0,"evidence":"","gap":""}},"strengths":[""],"risks":[""],"next_steps":[""],"missing_evidence":[""],"summary":""}. Оценки — целые 0..100; evidence и gap — по одной короткой фразе; списки — до 3 кратких пунктов, по-русски.`;
+  const system = `Ты — аналитик стартапов. Оценивай только данные карточки; не придумывай рынок, клиентов, выручку и результаты. Отмечай отсутствие доказательств и отличай заявление от подтверждённого результата. Верни только корректный JSON без markdown по форме: {"criteria":{"problem":{"score":0,"evidence":"","gap":""},"demand":{"score":0,"evidence":"","gap":""},"customer":{"score":0,"evidence":"","gap":""},"solution":{"score":0,"evidence":"","gap":""},"business":{"score":0,"evidence":"","gap":""},"execution":{"score":0,"evidence":"","gap":""}},"strengths":[""],"risks":[""],"next_steps":[""],"missing_evidence":[""],"summary":""}. Оценки — целые 0..100; evidence и gap — по одной короткой фразе; списки — до 3 кратких пунктов. Все текстовые поля JSON пиши на ${language}.`;
   try {
     const response = await fetch(`${base}/chat/completions`, {
       method: 'POST',

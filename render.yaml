@@ -28,6 +28,10 @@ services:
         value: https://inference.dahl.global/v1
       - key: INFERENCE_MODEL
         value: zai-org/GLM-5.3-Flash
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
   - type: web
     name: buro-startapov-admin
     runtime: node

@@ -7,6 +7,7 @@
     event.preventDefault(); event.stopImmediatePropagation();
     const keys = ['name','category','stage','problem','audience','value','description','businessModel','markets','technologies','fundingAsk','fundingCurrency','fundingGoal','teamName','teamResponsibility','news'];
     const data = Object.fromEntries(keys.map(key => [key, form.elements[key]?.value.trim() || '']));
+    try { data.language = JSON.parse(localStorage.getItem('buro-site-preferences-v1') || '{}').language || 'ru'; } catch { data.language = 'ru'; }
     if (keys.slice(0,6).some(key => !data[key])) { const note=document.querySelector('#ai-config-note'); if(note)note.textContent='Заполните название, направление, стадию, проблему, аудиторию и ценность, чтобы ИИ мог оценить проект.'; return; }
     let box = document.querySelector('#ai-result');
     if (!box) { box=document.createElement('section'); box.id='ai-result'; box.className='ai-result'; document.querySelector('#ai-config-note')?.after(box); }
