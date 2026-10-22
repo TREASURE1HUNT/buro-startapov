@@ -81,7 +81,10 @@
     const nextPassword = passwordForm.elements.newPassword.value;
     if (nextPassword !== passwordForm.elements.confirmPassword.value) { result.textContent = 'Новый пароль и подтверждение не совпадают.'; result.dataset.state = 'error'; return; }
     try {
+      if (window.BuroFirebaseAuth?.changePassword) await window.BuroFirebaseAuth.changePassword(oldPassword, nextPassword);
+      else {
       const response=await fetch('/api/database',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'password',oldPassword,newPassword:nextPassword})});const data=await response.json();if(!response.ok)throw Error(data.error||'Не удалось изменить пароль.');
+      }
       passwordForm.reset();
       result.textContent = 'Пароль обновлён.';
       result.dataset.state = 'success';

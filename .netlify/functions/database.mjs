@@ -52,6 +52,17 @@ async function importLegacyVotes(projectId) {
 function validProject(value) { return value && typeof value === 'object' && /^[\p{L}\p{N}_-]{1,100}$/u.test(String(value.id || '')) && typeof value.name === 'string' && value.name.trim().length > 0; }
 
 function validDeviceId(value) { return typeof value === 'string' && /^[A-Za-z0-9_-]{20,100}$/.test(value); }
+async function firebaseIdentity(idToken) {
+  const apiKey = process.env.FIREBASE_WEB_API_KEY || 'AIzaSyDVhtACl-0GnDDsiFfsozxNlaOm6shpsu4';
+  if (!apiKey) return { error: 'Firebase ещё не подключён к API: добавьте FIREBASE_WEB_API_KEY в Render.' };
+  if (typeof idToken !== 'string' || idToken.length < 100 || idToken.length > 10000) return { error: 'Сеанс Firebase истёк. Войдите ещё раз.' };
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ idToken }) });
+  if (!response.ok) return { error: 'Не удалось подтвердить сеанс Firebase.' };
+  const data = await response.json();
+  const user = data.users?.[0];
+  if (!user?.localId || !user.email) return { error: 'Firebase не вернул проверенный аккаунт.' };
+  return { uid: user.localId, email: emailOf(user.email), emailVerified: Boolean(user.emailVerified), displayName: String(user.displayName || '') };
+}
 async function sendEmailCode(email, purpose, code) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
@@ -121,6 +132,58 @@ export default async function handler(req) {
     }
     if (req.method !== 'POST') return reply({error:'Метод не поддерживается.'},405);
     const body=await req.json();
+    if (body.action === 'firebase-register') {
+      const identity = await firebaseIdentity(body.idToken);
+      if (identity.error) return reply({ error: identity.error }, identity.error.includes('ещё не подключён') ? 503 : 401);
+      if (identity.email !== emailOf(body.email) || identity.emailVerified) return reply({ error: 'Состояние email в Firebase изменилось. Повторите регистрацию.' }, 400);
+      const name = String(body.name || '').trim(), role = String(body.role || '');
+      if (!name || name.length > 100 || !['startup', 'investor', 'mentor'].includes(role)) return reply({ error: 'Проверьте имя и выбранную роль.' }, 400);
+      const profile = { investorFocus: String(body.investorFocus || '').slice(0, 160), ticketSize: String(body.ticketSize || '').slice(0, 100) };
+      const saved = await db.sql`SELECT email,firebase_uid,email_verified_at FROM app_accounts WHERE email=${identity.email} LIMIT 1`;
+      if (saved[0] && saved[0].firebase_uid !== identity.uid) return reply({ error: 'У этого email уже есть аккаунт. Войдите в него.' }, 409);
+      if (saved[0] && !saved[0].firebase_uid) {
+        await db.sql`UPDATE app_accounts SET firebase_uid=${identity.uid},updated_at=now() WHERE email=${identity.email} AND firebase_uid IS NULL`;
+        return reply({ ok: true, email: identity.email, linkedExistingAccount: true }, 200);
+      }
+      const rows = await db.sql`INSERT INTO app_accounts(email,name,role,password_hash,password_salt,password_scheme,profile,firebase_uid,email_verified_at) VALUES(${identity.email},${name},${role},'','', 'firebase',${JSON.stringify(profile)}::jsonb,${identity.uid},NULL) ON CONFLICT(email) DO UPDATE SET name=EXCLUDED.name,role=EXCLUDED.role,profile=EXCLUDED.profile,firebase_uid=EXCLUDED.firebase_uid,updated_at=now() WHERE app_accounts.firebase_uid=EXCLUDED.firebase_uid AND app_accounts.email_verified_at IS NULL RETURNING email`;
+      if (!rows.length) return reply({ error: 'Не удалось создать Firebase-профиль. Попробуйте войти в существующий аккаунт.' }, 409);
+      return reply({ ok: true, email: identity.email }, 201);
+    }
+    if (body.action === 'firebase-session') {
+      const identity = await firebaseIdentity(body.idToken);
+      if (identity.error) return reply({ error: identity.error }, identity.error.includes('ещё не подключён') ? 503 : 401);
+      if (identity.email !== emailOf(body.email) || !validDeviceId(body.deviceId)) return reply({ error: 'Сеанс или устройство не подтверждены.' }, 400);
+      const rows = await db.sql`SELECT email,name,role,profile,created_at,email_verified_at,firebase_uid FROM app_accounts WHERE email=${identity.email} LIMIT 1`;
+      const user = rows[0];
+      if (!user || user.firebase_uid !== identity.uid) return reply({ error: 'Профиль не найден. Завершите регистрацию через Firebase.' }, 404);
+      if (!identity.emailVerified) return reply({ error: 'Подтвердите адрес почты по ссылке в письме Firebase.', verificationRequired: true }, 403);
+      if (!user.email_verified_at) {
+        await db.sql`UPDATE app_accounts SET email_verified_at=now(),updated_at=now() WHERE email=${identity.email}`;
+        await db.sql`INSERT INTO app_analytics(event_name,route) VALUES('signup','/register')`;
+      }
+      const deviceHash = hash(`device:${body.deviceId}`), deviceLabel = String(body.deviceLabel || 'Browser').slice(0, 80);
+      const trusted = await db.sql`SELECT 1 FROM app_trusted_devices WHERE email=${identity.email} AND device_hash=${deviceHash} LIMIT 1`;
+      if (!trusted.length) {
+        await db.sql`INSERT INTO app_auth_challenges(email,purpose,code_hash,expires_at,attempts,payload,device_hash) VALUES(${identity.email},'login',${hash(`firebase-email-link:${identity.uid}:${deviceHash}`)},now()+interval '15 minutes',0,${JSON.stringify({ firebaseUid: identity.uid, deviceLabel })}::jsonb,${deviceHash}) ON CONFLICT(email,purpose) DO UPDATE SET code_hash=EXCLUDED.code_hash,expires_at=EXCLUDED.expires_at,attempts=0,payload=EXCLUDED.payload,device_hash=EXCLUDED.device_hash,created_at=now()`;
+        return reply({ verificationRequired: true, purpose: 'device-link', email: identity.email, message: 'Подтвердите вход по ссылке в письме Firebase.' }, 202);
+      }
+      await trustDevice(identity.email, deviceHash, deviceLabel);
+      return reply(await stateFor(identity.email), 200, { 'set-cookie': await setSession(identity.email) });
+    }
+    if (body.action === 'firebase-device-finish') {
+      const identity = await firebaseIdentity(body.idToken);
+      if (identity.error) return reply({ error: identity.error }, identity.error.includes('ещё не подключён') ? 503 : 401);
+      if (!identity.emailVerified || !validDeviceId(body.deviceId)) return reply({ error: 'Ссылка входа или устройство не подтверждены.' }, 401);
+      const deviceHash = hash(`device:${body.deviceId}`);
+      const challenges = await db.sql`SELECT payload,device_hash,expires_at FROM app_auth_challenges WHERE email=${identity.email} AND purpose='login' LIMIT 1`;
+      const challenge = challenges[0];
+      if (!challenge || challenge.device_hash !== deviceHash || new Date(challenge.expires_at).getTime() < Date.now() || challenge.payload?.firebaseUid !== identity.uid) return reply({ error: 'Ссылка устарела или была запрошена на другом устройстве. Войдите снова.' }, 400);
+      const account = await db.sql`SELECT 1 FROM app_accounts WHERE email=${identity.email} AND firebase_uid=${identity.uid} AND email_verified_at IS NOT NULL LIMIT 1`;
+      if (!account.length) return reply({ error: 'Аккаунт не найден или email не подтверждён.' }, 404);
+      await trustDevice(identity.email, deviceHash, String(challenge.payload.deviceLabel || body.deviceLabel || 'Browser').slice(0, 80));
+      await db.sql`DELETE FROM app_auth_challenges WHERE email=${identity.email} AND purpose='login'`;
+      return reply(await stateFor(identity.email), 200, { 'set-cookie': await setSession(identity.email) });
+    }
     if(body.action==='register') {
       const email=emailOf(body.email),name=String(body.name||'').trim(),role=String(body.role||'');
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||name.length<1||name.length>100||!['startup','investor','mentor'].includes(role)||typeof body.password!=='string'||body.password.length<8||body.password.length>256)return reply({error:'Проверьте имя, email, роль и пароль (не менее 8 символов).'},400);

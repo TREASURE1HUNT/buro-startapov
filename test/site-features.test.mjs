@@ -90,15 +90,19 @@ test('evaluations are attached to the saved public project document and its deta
   assert.match(details,/root\.dataset\.aiEvaluation/);
 });
 
-test('account access supports email OTP, new-device trust, and profile avatar control', async () => {
-  const auth=await readFile(path.join(root,'auth.js'),'utf8');
+test('Firebase auth verifies email and requires a Firebase email link on untrusted devices', async () => {
+  const auth=await readFile(path.join(root,'firebase-auth.js'),'utf8');
   const db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8');
   const migration=await readFile(path.join(root,'netlify/database/migrations/0004_email_auth/migration.sql'),'utf8');
+  const firebaseMigration=await readFile(path.join(root,'netlify/database/migrations/0006_firebase_auth/migration.sql'),'utf8');
   const settings=await readFile(path.join(root,'account-settings.js'),'utf8');
   const login=await readFile(path.join(root,'login.html'),'utf8');
-  assert.match(auth,/verify-email/); assert.match(auth,/verify-login/); assert.match(auth,/deviceId/);
-  assert.match(db,/RESEND_API_KEY/); assert.match(db,/app_trusted_devices/); assert.match(db,/timingSafeEqual/);
-  assert.match(migration,/app_auth_challenges/); assert.match(migration,/email_verified_at/);
+  const register=await readFile(path.join(root,'register.html'),'utf8');
+  const renderServer=await readFile(path.join(root,'render-server.mjs'),'utf8');
+  assert.match(auth,/sendEmailVerification/); assert.match(auth,/sendSignInLinkToEmail/); assert.match(auth,/signInWithEmailLink/);
+  assert.match(db,/accounts:lookup/); assert.match(db,/firebase-device-finish/); assert.match(db,/app_trusted_devices/);
+  assert.match(migration,/app_auth_challenges/); assert.match(migration,/email_verified_at/); assert.match(firebaseMigration,/firebase_uid TEXT/);
+  assert.match(renderServer,/0006_firebase_auth/); assert.match(register,/type="module" src="firebase-auth\.js"/);
   assert.match(settings,/account-avatar-trigger/); assert.match(login,/href="register\.html"[^>]*>Нет аккаунта\?/);
 });
 
