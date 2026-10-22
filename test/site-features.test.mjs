@@ -25,6 +25,12 @@ test('startup page enforces responsive markdown and contrast-aware project color
   assert.match(css,/\.markdown-rendered pre[^}]*overflow:auto/); assert.match(css,/overflow-wrap:anywhere/); assert.match(css,/data-site-theme="light"\] \.hero h1/);
 });
 
+test('startup upload accepts larger promo clips while enforcing 8 MB per video and 10 MB total', async () => {
+  const upload=await readFile(path.join(root,'site-enhancements.js'),'utf8'), detail=await readFile(path.join(root,'project-page.js'),'utf8');
+  assert.match(upload,/file\.size>8\*1024\*1024/); assert.match(upload,/existingBytes\+addedBytes>10\*1024\*1024/); assert.match(upload,/localStorage\.setItem\('buro-startapov-projects-v1'.*catch\{\}location\.href/);
+  assert.match(detail,/files\.some\(file=>file\.type\.startsWith\('video\/'\)&&file\.size>8\*1024\*1024\)/); assert.match(detail,/>10\*1024\*1024/);
+});
+
 test('AI score is derived from six weighted criteria and returns evidence/gaps', async () => {
   const criteria = { problem:100, demand:90, customer:80, solution:70, business:60, execution:50 };
   globalThis.fetch = async (url, options) => {
