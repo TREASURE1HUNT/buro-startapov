@@ -146,6 +146,10 @@ img,video,picture,.media-item:has(img,video),.catalog-preview:has(img,video),.sh
 .leader-panel{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;padding:0!important}
 .leader-table-head{border-top:1px solid #ffffff24!important;border-bottom:1px solid #ffffff24!important}
 .leader-row{border-bottom:1px solid #ffffff24!important}
+/* Match the leaderboard section background to the site's deep textured black. */
+body:has(.leaderboard){background:#080809!important}
+body:has(.leaderboard):before{display:none!important}
+.leaderboard{background:transparent!important}
 html body{background:var(--capital-bg);color:var(--capital-ink)}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 78% 12%,rgba(104,82,169,.13),transparent 31%),radial-gradient(ellipse at 8% 88%,rgba(73,99,148,.08),transparent 32%)}
 .topbar{background:rgba(8,9,11,.88);border-color:var(--capital-line);backdrop-filter:blur(18px)}
