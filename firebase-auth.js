@@ -73,10 +73,12 @@ function legacyCodeStep(form, result, data) {
 async function finishDeviceLink() {
   const stored = read('buro-firebase-device-link', null);
   const email = stored?.email || new URL(location.href).searchParams.get('email');
+  const confirmedDeviceId = stored?.deviceId || new URL(location.href).searchParams.get('did') || deviceId();
   const result = document.querySelector('#login-result');
   if (!email) throw new Error('Для завершения входа откройте ссылку на том же устройстве и в том же браузере, где запросили её.');
   const credential = await signInWithEmailLink(auth, email, location.href);
-  const data = await call({ action: 'firebase-device-finish', idToken: await credential.user.getIdToken(true), email: credential.user.email });
+  localStorage.setItem(deviceKey, confirmedDeviceId);
+  const data = await call({ action: 'firebase-device-finish', idToken: await credential.user.getIdToken(true), email: credential.user.email, deviceId: confirmedDeviceId });
   cacheState(data); localStorage.removeItem('buro-firebase-device-link');
   show(result, 'Вход подтверждён. Открываю профиль…');
   setTimeout(() => { location.href = stored?.next === 'create.html' ? 'create.html' : 'profile.html'; }, 250);
@@ -144,11 +146,12 @@ if (login) login.addEventListener('submit', async event => {
       throw error;
     }
     if (data.verificationRequired && data.purpose === 'device-link') {
-      const settings = { url: `${location.origin}/login.html?device=1`, handleCodeInApp: true };
+      const pendingDeviceId = deviceId();
+      const settings = { url: `${location.origin}/login.html?device=1&did=${encodeURIComponent(pendingDeviceId)}&email=${encodeURIComponent(email)}`, handleCodeInApp: true };
       await sendSignInLinkToEmail(auth, email, settings);
-      localStorage.setItem('buro-firebase-device-link', JSON.stringify({ email, next: redirectAfterLogin() }));
+      localStorage.setItem('buro-firebase-device-link', JSON.stringify({ email, next: redirectAfterLogin(), deviceId: pendingDeviceId }));
       await signOut(auth);
-      show(result, `Ссылка для подтверждения нового устройства отправлена на ${email}. Откройте письмо в этом же браузере.`); return;
+      show(result, `Ссылка для подтверждения нового устройства отправлена на ${email}. Откройте её из письма, чтобы завершить вход.`); return;
     }
     cacheState(data); show(result, 'Вход выполнен. Открываю профиль…');
     setTimeout(() => { location.href = redirectAfterLogin(); }, 250);
@@ -158,6 +161,7 @@ if (login) login.addEventListener('submit', async event => {
 if (login && isSignInWithEmailLink(auth, location.href)) {
   login.querySelectorAll('input').forEach(input => { input.disabled = true; });
   const stored = read('buro-firebase-device-link', null);
+  if (!stored?.deviceId && new URL(location.href).searchParams.get('did')) { localStorage.setItem('buro-firebase-device-link', JSON.stringify({ email: new URL(location.href).searchParams.get('email') || '', next: redirectAfterLogin(), deviceId: new URL(location.href).searchParams.get('did') })); }
   if (stored?.email) { login.elements.email.value = stored.email; }
   finishDeviceLink().catch(error => show(document.querySelector('#login-result'), errorMessage(error), 'error'));
 }

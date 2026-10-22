@@ -99,7 +99,7 @@ test('Firebase auth verifies email and requires a Firebase email link on untrust
   const login=await readFile(path.join(root,'login.html'),'utf8');
   const register=await readFile(path.join(root,'register.html'),'utf8');
   const renderServer=await readFile(path.join(root,'render-server.mjs'),'utf8');
-  assert.match(auth,/sendEmailVerification/); assert.match(auth,/sendSignInLinkToEmail/); assert.match(auth,/signInWithEmailLink/);
+  assert.match(auth,/sendEmailVerification/); assert.match(auth,/sendSignInLinkToEmail/); assert.match(auth,/signInWithEmailLink/); assert.match(auth,/confirmedDeviceId/);
   assert.match(db,/accounts:lookup/); assert.match(db,/firebase-device-finish/); assert.match(db,/app_trusted_devices/);
   assert.match(migration,/app_auth_challenges/); assert.match(migration,/email_verified_at/); assert.match(firebaseMigration,/firebase_uid TEXT/);
   assert.match(renderServer,/0006_firebase_auth/); assert.match(register,/type="module" src="firebase-auth\.js"/);
