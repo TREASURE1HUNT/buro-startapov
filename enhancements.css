@@ -150,6 +150,8 @@ img,video,picture,.media-item:has(img,video),.catalog-preview:has(img,video),.sh
 body:has(.leaderboard){background:#080809!important}
 body:has(.leaderboard):before{display:none!important}
 .leaderboard{background:transparent!important}
+/* The top-startups carousel must blend into the same deep black page surface. */
+.ranking-showcase,.ranking-carousel,.ranking-track,.showcase-card,.showcase-link{background:#080809!important}
 html body{background:var(--capital-bg);color:var(--capital-ink)}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 78% 12%,rgba(104,82,169,.13),transparent 31%),radial-gradient(ellipse at 8% 88%,rgba(73,99,148,.08),transparent 32%)}
 .topbar{background:rgba(8,9,11,.88);border-color:var(--capital-line);backdrop-filter:blur(18px)}
