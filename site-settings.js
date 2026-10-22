@@ -6,9 +6,9 @@
   const originals = new WeakMap();
   const attrOriginals = new WeakMap();
   const settingKey = 'buro-site-preferences-v1';
-  let preferences = { theme:'dark', language:'ru' };
+  let preferences = { language:'ru' };
   try { preferences = { ...preferences, ...JSON.parse(localStorage.getItem(settingKey) || '{}') }; } catch {}
-  const theme = value => { preferences.theme = value; document.documentElement.dataset.siteTheme = value; document.querySelector('meta[name="theme-color"]')?.setAttribute('content', value === 'light' ? '#f4f3ec' : '#090909'); };
+  const theme = () => { document.documentElement.dataset.siteTheme = 'dark'; document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#090909'); };
   const translate = value => preferences.language === 'en' && Object.hasOwn(labels, value.trim()) ? value.replace(value.trim(), labels[value.trim()]) : value;
   function translateTree(root = document) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -32,18 +32,17 @@
     else fetch('/api/analytics',{method:'POST',headers:{'content-type':'application/json'},body:data,keepalive:true}).catch(()=>{});
   }
   document.documentElement.lang = preferences.language; document.documentElement.dataset.siteLanguage = preferences.language;
-  theme(preferences.theme);
+  theme();
   const topbar = document.querySelector('.topbar');
   let header = document.querySelector('.header-actions');
   if (topbar && !header) { header=document.createElement('div'); header.className='header-actions site-preferences-only'; topbar.appendChild(header); }
   if (header) {
     const wrap = document.createElement('div'); wrap.className = 'site-preferences';
-    wrap.innerHTML = '<button class="site-preferences-button" type="button" aria-expanded="false" aria-controls="site-preferences-panel"><span aria-hidden="true">◐</span><span class="site-preferences-caption">Тема · язык</span></button><section class="site-preferences-panel" id="site-preferences-panel" hidden><b>Настройки сайта</b><label>Тема<select id="site-theme"><option value="dark">Тёмная</option><option value="light">Светлая</option></select></label><label>Язык<select id="site-language"><option value="ru">Русский</option><option value="en">English</option></select></label></section>';
+    wrap.innerHTML = '<button class="site-preferences-button" type="button" aria-expanded="false" aria-controls="site-preferences-panel"><span aria-hidden="true">文</span><span class="site-preferences-caption">Язык · Language</span></button><section class="site-preferences-panel" id="site-preferences-panel" hidden><b>Язык · Language</b><label>Язык · Language<select id="site-language"><option value="ru">Русский</option><option value="en">English</option></select></label></section>';
     header.insertBefore(wrap, header.querySelector('.menu-toggle') || null);
-    const button = wrap.querySelector('button'), panel = wrap.querySelector('section'), themeSelect = wrap.querySelector('#site-theme'), languageSelect = wrap.querySelector('#site-language');
-    themeSelect.value = preferences.theme; languageSelect.value = preferences.language;
+    const button = wrap.querySelector('button'), panel = wrap.querySelector('section'), languageSelect = wrap.querySelector('#site-language');
+    languageSelect.value = preferences.language;
     button.addEventListener('click',()=>{ panel.hidden = !panel.hidden; button.setAttribute('aria-expanded',String(!panel.hidden)); });
-    themeSelect.addEventListener('change',()=>{theme(themeSelect.value);localStorage.setItem(settingKey,JSON.stringify(preferences));});
     languageSelect.addEventListener('change',()=>{preferences.language=languageSelect.value;document.documentElement.lang=preferences.language;document.documentElement.dataset.siteLanguage=preferences.language;localStorage.setItem(settingKey,JSON.stringify(preferences));translateTree();document.dispatchEvent(new CustomEvent('buro:language-change',{detail:preferences.language}));});
     document.addEventListener('click',event=>{if(!wrap.contains(event.target)){panel.hidden=true;button.setAttribute('aria-expanded','false');}});
   }

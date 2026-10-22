@@ -75,10 +75,10 @@ test('Render seed contains exactly twenty attributed public startup cards', asyn
   assert.match(sql,/ON CONFLICT\(id\) DO NOTHING/);
 });
 
-test('site settings include persistent RU/EN and dark/light controls plus metrics', async () => {
+test('site settings include persistent RU/EN language control and metrics with monochrome theme', async () => {
   const js=await readFile(path.join(root,'site-settings.js'),'utf8');
   const html=await readFile(path.join(root,'index.html'),'utf8');
-  assert.match(js,/site-theme/); assert.match(js,/site-language/); assert.match(js,/localStorage\.setItem\(settingKey/);
+  assert.doesNotMatch(js,/id="site-theme"|themeSelect/); assert.match(js,/site-language/); assert.match(js,/localStorage\.setItem\(settingKey/); assert.match(js,/dataset\.siteTheme = 'dark'/);
   assert.match(js,/page_view/); assert.match(js,/project_view/); assert.match(html,/site-settings\.css/); assert.match(html,/site-settings\.js/);
 });
 

@@ -108,6 +108,18 @@ html[data-site-theme="light"] .hero h1,html[data-site-theme="light"] .hero-copy 
 .academy-proof{background:linear-gradient(115deg,#0c0c0d,#101011 55%,#0b0b0c)}.proof-card{background:linear-gradient(150deg,#f5f5f6,#e9e9eb)}.proof-card .proof-accent,.proof-card strong{color:#444449}
 .join-glow{background:radial-gradient(circle,#bebec415,#77777b08 42%,transparent 69%)}
 @media(hover:hover){.module-link:hover,.academy-project-links a:hover{color:#cfcfd2}}
+
+/* Force the requested black/white design system across every route and component. */
+:root{--green:#f0f0f1;--cyan:#c9c9cc;--orange:#b5b5b8;--capital-accent:#f1f1f2;--capital-accent-soft:#b7b7bb;--line:rgba(235,235,238,.16)}
+html,html[data-site-theme],html[data-site-theme="light"]{color-scheme:dark!important;background:#080809!important}
+html body,html[data-site-theme="light"] body{background:#080809!important;color:#ededee!important}
+.grain{opacity:.035!important}
+.button,.button-small,.site-preferences-button,.site-preferences-panel,.site-preferences-panel select{filter:grayscale(1)}
+.gradient-text,.brand-mark i,.pulse,.live-dot,.console-core,.console-node,.console-orbit,.console-window:before,.console-window:after,.module-art,.art-circle,.art-crosshair,.art-bars i,.art-window,.art-growth i,.join-glow,.join-orbit,.join-orbit:before,.join-orbit:after,.catalog-project-card,.project-card,.leader-panel,.leaderboard-table,.investor-leader,.project-form,.preview-card,.project-detail-main,.project-detail-score,.media-item,.media-upload-label,.support-panel,.account-security,.owned-startup-card,.proof-card,.academy-module,.method-row,.catalog-controls,.catalog-toolbar,.scoring-box{filter:grayscale(1)!important}
+.site-preferences-button span:first-child,.site-preferences-panel *{color:#ededee!important}
+html[data-site-theme="light"] body:before{display:none!important}html[data-site-theme="light"] .topbar,html[data-site-theme="light"] .footer,html[data-site-theme="light"] .academy-section,html[data-site-theme="light"] .academy-proof,html[data-site-theme="light"] .join-section,html[data-site-theme="light"] .project-form,html[data-site-theme="light"] .catalog-project-card{background:#080809!important;color:#ededee!important;border-color:#333!important}
+html[data-site-theme="light"] .academy-hero-copy h1,html[data-site-theme="light"] .academy-section h2,html[data-site-theme="light"] .academy-projects h2,html[data-site-theme="light"] .academy-module h3,html[data-site-theme="light"] .nav a,html[data-site-theme="light"] .brand,html[data-site-theme="light"] .header-actions a{color:#ededee!important;-webkit-text-fill-color:#ededee!important}
+html[data-site-theme="light"] .project-form input,html[data-site-theme="light"] .project-form textarea,html[data-site-theme="light"] .project-form select,html[data-site-theme="light"] .site-preferences-panel select{background:#101011!important;color:#ededee!important;border-color:#414145!important}
 html body{background:var(--capital-bg);color:var(--capital-ink)}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 78% 12%,rgba(104,82,169,.13),transparent 31%),radial-gradient(ellipse at 8% 88%,rgba(73,99,148,.08),transparent 32%)}
 .topbar{background:rgba(8,9,11,.88);border-color:var(--capital-line);backdrop-filter:blur(18px)}
