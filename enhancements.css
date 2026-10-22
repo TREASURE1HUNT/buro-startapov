@@ -95,6 +95,19 @@ html[data-site-theme="light"] .hero h1,html[data-site-theme="light"] .hero-copy 
 
 /* Cypher-inspired private-capital visual system: restrained, editorial, premium. */
 :root{--capital-bg:#08090b;--capital-panel:#101216;--capital-line:rgba(226,231,239,.14);--capital-ink:#f0f1f2;--capital-muted:#9a9da7;--capital-accent:#b8a0ff;--capital-accent-soft:#8270c9}
+/* Cypher's reference is monochrome; keep interactions and score colorless too. */
+:root{--capital-accent:#f1f1f2;--capital-accent-soft:#b7b7bb}
+.brand-mark i,.pulse,.live-dot{background:#e8e8ea;box-shadow:0 0 13px #ffffff55}
+.nav a:hover,.nav a[aria-current=page],.header-actions .login:hover,.text-link,.arrow-link,.module-link,.academy-project-links a,.method-note a{color:#f1f1f2}
+.button,.button-small{background:#f1f1f2;color:#111;border-color:#f1f1f2;box-shadow:none}.button:hover,.button-small:hover{background:#d8d8db;border-color:#d8d8db;color:#111}
+.module-link,.academy-project-links a{border-color:#dedee0}.module-index,.module-copy li:before,.console-top span:last-child,.rank>b.rank-one,.score small,.method-num,.method-item>b,.footer-links a:last-child{color:#ededee}
+.academy-hero{background:linear-gradient(110deg,#090a0d 0%,#0a0a0b 56%,#0c0c0d 100%)}.academy-hero:before{background:radial-gradient(ellipse at 77% 47%,#aaaab20d,transparent 39%),radial-gradient(ellipse at 91% 82%,#77777b0d,transparent 38%)}
+.gradient-text{background:linear-gradient(105deg,#f4f4f4 4%,#dedee0 76%,#aaaab0);-webkit-background-clip:text;background-clip:text}
+.academy-console{border-color:#dedee035;box-shadow:0 32px 100px #0008,0 0 80px #ffffff0c}.console-window{background:radial-gradient(ellipse at 50% 50%,#bebec428,transparent 52%),linear-gradient(135deg,#111112,#0b0b0c)}.console-window:before,.console-orbit{border-color:#dedee044}.console-window:after,.orbit-two{border-color:#b7b7bb33}.console-core{background:radial-gradient(circle at 35% 28%,#f3f3f4,#8b8b90 31%,#262629 76%);box-shadow:0 0 65px #ffffff30;color:#18181a}.console-node{border-color:#dedee035}
+.art-observe{background:radial-gradient(ellipse at 53% 46%,#a8a8ad38,transparent 38%),linear-gradient(135deg,#171719,#0a0a0b)}.art-crosshair,.art-circle{border-color:#dddddf66}.art-crosshair{background:#dddddf44}.art-crosshair:after{background:#dddddf44}.art-validate{background:linear-gradient(145deg,#151517,#101011)}.art-bars{border-color:#dddddf66}.art-bars i{background:linear-gradient(#e7e7e8,#77777c)}.art-build{background:radial-gradient(ellipse at 70% 50%,#77777b44,transparent 40%),linear-gradient(135deg,#1b1b1d,#111112)}.art-window{border-color:#dddddf66}
+.academy-proof{background:linear-gradient(115deg,#0c0c0d,#101011 55%,#0b0b0c)}.proof-card{background:linear-gradient(150deg,#f5f5f6,#e9e9eb)}.proof-card .proof-accent,.proof-card strong{color:#444449}
+.join-glow{background:radial-gradient(circle,#bebec415,#77777b08 42%,transparent 69%)}
+@media(hover:hover){.module-link:hover,.academy-project-links a:hover{color:#cfcfd2}}
 html body{background:var(--capital-bg);color:var(--capital-ink)}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 78% 12%,rgba(104,82,169,.13),transparent 31%),radial-gradient(ellipse at 8% 88%,rgba(73,99,148,.08),transparent 32%)}
 .topbar{background:rgba(8,9,11,.88);border-color:var(--capital-line);backdrop-filter:blur(18px)}
