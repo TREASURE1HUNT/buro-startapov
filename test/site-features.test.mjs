@@ -103,6 +103,13 @@ test('account profile separates settings and owned startups into neutral tabs', 
   assert.match(css,/\.my-startups-panel\{[^}]*background:#101011/); assert.match(translations,/Мои стартапы':'My startups/);
 });
 
+test('homepage program keeps distinct black, graphite, and silver tones without chromatic accents', async () => {
+  const css=await readFile(path.join(root,'enhancements.css'),'utf8');
+  assert.match(css,/\.academy-module\.module-active\{background:linear-gradient\(100deg,#1a1a1d/);
+  assert.match(css,/\.art-observe\{background:radial-gradient\(ellipse at 52% 45%,#77777c/);
+  assert.match(css,/\.art-bars i\{background:linear-gradient\(180deg,#f0f0f1,#77777d\)/);
+});
+
 test('evaluations are attached to the saved public project document and its details page', async () => {
   const save=await readFile(path.join(root,'site-enhancements.js'),'utf8');
   const details=await readFile(path.join(root,'project-page.js'),'utf8');
