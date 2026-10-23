@@ -216,3 +216,24 @@ html[data-site-theme="light"] .topbar{background:#f5f4f8ed;border-color:#d9d7e0}
 .project-detail-main .markdown-rendered,.project-detail-main .markdown-rendered p,.project-detail-main .markdown-rendered li,.project-detail-main .markdown-rendered blockquote{color:#d4d4d7!important}
 .project-detail-main .markdown-rendered h1,.project-detail-main .markdown-rendered h2,.project-detail-main .markdown-rendered h3,.project-detail-main .markdown-rendered h4,.project-detail-main .markdown-rendered strong{color:#f1f1f2!important}
 .project-detail-main .markdown-rendered a{color:#ededee!important;text-decoration:underline;text-underline-offset:3px}
+/* Account tabs: two clear, neutral sections with no green/purple tint. */
+.account-tabs{display:flex;gap:28px;margin:32px 0 0;border-bottom:1px solid #343438}
+.account-tabs [role="tab"]{position:relative;margin:0;padding:0 2px 14px;border:0;border-bottom:2px solid transparent;background:transparent;color:#99999e;font:500 13px var(--font);cursor:pointer;transition:color .18s,border-color .18s}
+.account-tabs [role="tab"]:hover,.account-tabs [role="tab"][aria-selected="true"]{color:#f0f0f1}
+.account-tabs [role="tab"][aria-selected="true"]{border-bottom-color:#e5e5e7}
+.account-settings{margin:0 0 30px;padding:clamp(22px,4vw,40px);border:1px solid #343438;background:#101011;color:#ededee}
+.my-startups-panel{margin:0 0 30px;padding:clamp(22px,4vw,40px);border:1px solid #343438;background:#101011;color:#ededee}
+.account-settings[hidden],.my-startups-panel[hidden]{display:none!important}
+.account-settings .account-settings-head h2,.my-startups-panel h2,.my-startups-panel h3{color:#f0f0f1!important}
+.account-settings .account-settings-head p,.my-startups-panel p{color:#b7b7bc!important}
+.account-settings .gradient-text{background:none!important;color:#f0f0f1!important;-webkit-text-fill-color:#f0f0f1!important}
+.my-startups-panel .owned-startups-heading{margin-bottom:22px}
+.my-startups-panel .owned-startups-heading h2{margin:12px 0 0;font-size:clamp(28px,4vw,42px);font-weight:500;letter-spacing:-.06em}
+.my-startups-panel .owned-startup-card{border-color:#38383b;background:#141416}
+.my-startups-panel .owned-startup-copy>span{color:#c5c5c8}
+.my-startups-panel .owned-startup-cover{background:#09090a;color:#d4d4d7}
+.my-startups-panel .owned-startup-actions .button,.my-startups-panel .owned-startup-actions .clear-button{background:#e8e8e9!important;color:#111!important;border-color:#e8e8e9!important}
+.my-startups-panel .owned-startup-actions .owned-delete{background:transparent!important;color:#c5c5c8!important;border-color:#55555a!important}
+.owned-startups-empty{padding:28px 0;border-top:1px solid #303034}
+.owned-startups-empty h3{margin:0 0 8px;font-size:20px}
+@media(max-width:600px){.account-tabs{gap:21px}.account-tabs [role="tab"]{font-size:12px}.my-startups-panel .owned-startup-card{grid-template-columns:1fr}}

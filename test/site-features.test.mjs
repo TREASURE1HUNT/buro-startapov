@@ -93,6 +93,16 @@ test('signed-in header hides account signup and always exposes investors navigat
   assert.match(js,/\.nav a\[href="register\.html"\]/); assert.match(js,/investors\.html/); assert.match(js,/nav\.insertBefore\(investors,create\|\|null\)/);
 });
 
+test('account profile separates settings and owned startups into neutral tabs', async () => {
+  const settings=await readFile(path.join(root,'account-settings.js'),'utf8');
+  const css=await readFile(path.join(root,'enhancements.css'),'utf8');
+  const translations=await readFile(path.join(root,'translations-en.js'),'utf8');
+  assert.match(settings,/account-tabs/); assert.match(settings,/Настройки аккаунта/); assert.match(settings,/Мои стартапы/);
+  assert.match(settings,/aria-selected/); assert.match(settings,/my-startups-panel/);
+  assert.match(css,/\.account-tabs \[role="tab"\]\[aria-selected="true"\]\{border-bottom-color:#e5e5e7\}/);
+  assert.match(css,/\.my-startups-panel\{[^}]*background:#101011/); assert.match(translations,/Мои стартапы':'My startups/);
+});
+
 test('evaluations are attached to the saved public project document and its details page', async () => {
   const save=await readFile(path.join(root,'site-enhancements.js'),'utf8');
   const details=await readFile(path.join(root,'project-page.js'),'utf8');
