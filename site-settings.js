@@ -38,7 +38,7 @@
   if (topbar && !header) { header=document.createElement('div'); header.className='header-actions site-preferences-only'; topbar.appendChild(header); }
   if (header) {
     const wrap = document.createElement('div'); wrap.className = 'site-preferences';
-    wrap.innerHTML = '<button class="site-preferences-button" type="button" aria-expanded="false" aria-controls="site-preferences-panel"><span aria-hidden="true">文</span><span class="site-preferences-caption">Язык · Language</span></button><section class="site-preferences-panel" id="site-preferences-panel" hidden><b>Язык · Language</b><label>Язык · Language<select id="site-language"><option value="ru">Русский</option><option value="en">English</option></select></label></section>';
+    wrap.innerHTML = '<button class="site-preferences-button" type="button" aria-label="Выбрать язык" aria-expanded="false" aria-controls="site-preferences-panel"><span aria-hidden="true">文</span></button><section class="site-preferences-panel" id="site-preferences-panel" hidden><select id="site-language" aria-label="Выбрать язык"><option value="ru">Русский</option><option value="en">English</option></select></section>';
     header.insertBefore(wrap, header.querySelector('.menu-toggle') || null);
     const button = wrap.querySelector('button'), panel = wrap.querySelector('section'), languageSelect = wrap.querySelector('#site-language');
     languageSelect.value = preferences.language;

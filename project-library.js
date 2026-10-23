@@ -32,6 +32,11 @@
     host.innerHTML = rows.length ? rows.map(row => `<article class="project-history-item"><span class="history-date">${escape(new Date(row.at).toLocaleString('ru-RU',{dateStyle:'medium',timeStyle:'short'}))}</span><div><b>${escape(historyLabel[row.action] || 'Действие')}</b><span>${escape(row.name)}</span></div><a href="project.html?id=${encodeURIComponent(row.id)}">Открыть ↗</a></article>`).join('') : '<div class="library-empty">История появится здесь после просмотра, создания или изменения проектов.</div>';
   }
   function renderLibrary() {
+    if (!sessionUser?.email) {
+      $('#library-count').textContent = 'Требуется вход';
+      library.innerHTML = '<div class="library-empty"><h3>Войдите, чтобы увидеть свои стартапы</h3><p>Здесь отображаются проекты, созданные именно этим аккаунтом.</p><a class="button" href="login.html?next=create.html">Войти ↗</a></div>';
+      return;
+    }
     const search = ($('#library-search')?.value || '').trim().toLocaleLowerCase('ru');
     const category = $('#library-category')?.value || '';
     const filtered = projects.filter(project => {
@@ -40,11 +45,13 @@
     });
     $('#library-count').textContent = `${filtered.length} из ${projects.length} проектов`;
     library.innerHTML = filtered.length ? filtered.map(project => {
-      const owned = Boolean(sessionUser?.role === 'startup' && sessionUser.email && String(project.ownerEmail || '').toLowerCase() === String(sessionUser.email).toLowerCase());
+      const owned = Boolean(sessionUser?.email && String(project.ownerEmail || '').toLowerCase() === String(sessionUser.email).toLowerCase());
+      if (!owned) return '';
       const summary = project.description || project.value || project.problem || 'Команда ещё не добавила описание.';
       const id = encodeURIComponent(project.id);
       return `<article class="library-project-card"><div class="library-project-index">${escape(project.category || 'СТАРТАП')}<span>${escape(project.stage || 'Идея')}</span></div><h3>${escape(project.name || 'Без названия')}</h3><p>${escape(summary)}</p><div class="library-project-meta"><span>${escape(project.ownerName || project.teamName || 'Команда проекта')}</span><span>${Number(project.progress || 0)}% готовности</span></div><div class="library-project-actions"><a class="library-open" data-project-open="${escape(project.id)}" href="project.html?id=${id}">Открыть ↗</a>${owned ? `<a class="library-edit" href="create.html?edit=${id}">Редактировать</a><button class="library-delete" type="button" data-project-delete="${escape(project.id)}">Удалить</button>` : ''}</div></article>`;
-    }).join('') : '<div class="library-empty">По этому запросу стартапы не найдены.</div>';
+    }).join('') : projects.length ? '<div class="library-empty">По этому запросу стартапы не найдены.</div>' : '<div class="library-empty"><h3>Пока нет ваших стартапов</h3><p>Создайте проект — он появится в этой библиотеке.</p><button class="button" type="button" data-open-create>Создать проект ↗</button></div>';
+    library.querySelector('[data-open-create]')?.addEventListener('click', () => selectTab('create'));
     library.querySelectorAll('.library-project-card').forEach(card => window.BuroMotion?.observe(card));
     library.querySelectorAll('[data-project-open]').forEach(link => link.addEventListener('click', () => {
       const project = projects.find(item => String(item.id) === link.dataset.projectOpen); if (project) log('opened', project);
@@ -53,7 +60,7 @@
   }
   async function removeProject(id) {
     const project = projects.find(item => String(item.id) === String(id));
-    if (!project || !confirm(`Удалить «${project.name}» из общей библиотеки?`)) return;
+    if (!project || !confirm(`Удалить «${project.name}» из ваших проектов и общего каталога?`)) return;
     const button = library.querySelector(`[data-project-delete="${CSS.escape(String(id))}"]`); if (button) button.disabled = true;
     try {
       const response = await fetch('/api/database', { method:'POST', credentials:'same-origin', headers:{'content-type':'application/json'}, body:JSON.stringify({action:'delete-project',projectId:id}) });
@@ -69,11 +76,11 @@
       if (!response.ok) throw Error('Каталог временно недоступен.');
       const data = await response.json();
       const all = [...(data.projects || []), ...read(projectKey, [])];
-      projects = [...new Map(all.filter(item => item?.id).map(item => [String(item.id), item])).values()];
+      projects = sessionUser?.email ? [...new Map(all.filter(item => item?.id && String(item.ownerEmail || '').toLowerCase() === String(sessionUser.email).toLowerCase()).map(item => [String(item.id), item])).values()] : [];
       const select = $('#library-category');
       [...new Set(projects.map(item => item.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ru')).forEach(value => select.add(new Option(value, value)));
       renderLibrary();
-    } catch { library.innerHTML = '<div class="library-empty">Не удалось загрузить общие проекты. Обновите страницу чуть позже.</div>'; $('#library-count').textContent = 'Каталог недоступен'; }
+    } catch { library.innerHTML = '<div class="library-empty">Не удалось загрузить ваши проекты. Обновите страницу чуть позже.</div>'; $('#library-count').textContent = 'Каталог недоступен'; }
   }
   $('#library-search')?.addEventListener('input', renderLibrary);
   $('#library-category')?.addEventListener('change', renderLibrary);
@@ -128,6 +135,3 @@
   }, true);
   loadProjects();
 })();
-
-
-
