@@ -253,3 +253,14 @@ html[data-site-theme="light"] .topbar{background:#f5f4f8ed;border-color:#d9d7e0}
 .art-build{background:radial-gradient(ellipse at 68% 42%,#4d4d52,transparent 42%),linear-gradient(135deg,#19191c,#09090a 72%)!important}.art-window{border-color:#bcbcc166!important;background:#0b0b0dcc!important}.art-window i{background:#b9b9be!important}
 .art-grow{background:radial-gradient(ellipse at 74% 57%,#535358,transparent 45%),linear-gradient(135deg,#17171a,#09090a 72%)!important}.art-growth i{background:linear-gradient(180deg,#eeeeef,#74747a)!important}
 .art-caption{color:#e0e0e2!important}.module-link,.academy-project-links a{color:#e7e7e9!important;border-color:#77777c!important}
+/* Keep academy illustrations flat and quiet: no bright-white highlights or tonal gradients. */
+.academy-module{background:#101011!important}
+.academy-module.module-active,.academy-module.module-active:hover{background:#101011!important;box-shadow:none!important}
+.module-art{background:#101011!important;border-color:#363639!important;box-shadow:none!important}
+.art-observe,.art-validate,.art-build,.art-grow{background:#101011!important}
+.art-crosshair{background:#555559!important;border-color:#555559!important}.art-crosshair:after{background:#555559!important}
+.art-circle{border-color:#555559!important;background:transparent!important;box-shadow:none!important}
+.art-bars{border-color:#555559!important}.art-bars i{background:#66666a!important;box-shadow:none!important}
+.art-window{border-color:#555559!important;background:#101011!important;box-shadow:none!important}.art-window i{background:#66666a!important}
+.art-growth i{background:#66666a!important;box-shadow:none!important}
+.art-caption{color:#a5a5a9!important}
