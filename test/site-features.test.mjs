@@ -173,3 +173,8 @@ test('English dictionary covers Russian strings rendered in the page templates',
   assert.deepEqual([...missing],[]);
   for(const file of (await htmlFiles).filter(name=>name.endsWith('.html'))){const source=await readFile(path.join(root,file),'utf8');if(source.includes('site-settings.js'))assert.match(source,/translations-en\.js/);}
 });
+
+test('project workspace library, history, monochrome skin, and animated route network are wired', async () => {
+  const create=await readFile(path.join(root,'create.html'),'utf8'),lib=await readFile(path.join(root,'project-library.js'),'utf8'),motion=await readFile(path.join(root,'site-motion.js'),'utf8'),index=await readFile(path.join(root,'index.html'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8');
+  assert.match(create,/data-workspace-tab="library"/);assert.match(create,/data-workspace-tab="history"/);assert.match(create,/data-workspace-tab="create"/);assert.match(lib,/api\/database\?action=projects/);assert.match(lib,/delete-project/);assert.match(lib,/buro-project-history-v1/);assert.match(index,/Создать проект/);assert.match(motion,/anime\?\.animate/);assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/route-branch/);assert.match(css,/\.academy-route-art/);assert.match(css,/--green:#aaa!important/);assert.doesNotMatch(create,/value="#b8f548"/);
+});
