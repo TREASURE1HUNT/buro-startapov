@@ -75,16 +75,13 @@ test('Render seed contains exactly twenty attributed public startup cards', asyn
   assert.match(sql,/ON CONFLICT\(id\) DO NOTHING/);
 });
 
-test('site settings include persistent RU/EN language control and metrics with monochrome theme', async () => {
+test('site settings include persistent RU/EN language control and the unified teal-violet palette', async () => {
   const js=await readFile(path.join(root,'site-settings.js'),'utf8');
   const html=await readFile(path.join(root,'index.html'),'utf8');
   assert.doesNotMatch(js,/id="site-theme"|themeSelect/); assert.match(js,/site-language/); assert.match(js,/localStorage\.setItem\(settingKey/); assert.match(js,/dataset\.siteTheme = 'dark'/);
-  const css=await readFile(path.join(root,'enhancements.css'),'utf8'); assert.match(css,/--green:#f0f0f1/); assert.match(css,/\.header-account-avatar/); assert.match(css,/\.profile-avatar/); assert.match(css,/\.investor-card/); assert.match(css,/\*:not\(img\):not\(video\)/); assert.match(css,/\.media-item:has\(img,video\) img/);
-  assert.match(css,/\.leader-panel\{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;padding:0!important\}/);
-  assert.match(css,/body:has\(\.leaderboard\):before\{display:none!important\}/); assert.match(css,/\.leaderboard\{background:transparent!important\}/);
-  assert.match(css,/\.ranking-showcase,\.ranking-carousel,\.ranking-track,\.showcase-card,\.showcase-link\{background:#080809!important\}/);
-  const home=await readFile(path.join(root,'index.html'),'utf8'); assert.doesNotMatch(home,/class="academy-console"/); assert.match(css,/\.proof-score strong\{color:#222!important\}/); assert.match(css,/\.proof-split span\{color:#595959!important\}/);
-  assert.match(css,/\.project-detail-main:has\(img,video\).*filter:none!important/); assert.match(css,/\.project-media-gallery img,.project-media-gallery video[^}]*filter:none!important/); assert.match(css,/\.catalog-project-card h3 a,\.project-card h3 a\{color:#ededee!important\}/);
+  const css=await readFile(path.join(root,'enhancements.css'),'utf8'); assert.match(css,/--brand-teal:#14F195/); assert.match(css,/--brand-violet:#9945FF/); assert.match(css,/--brand-surface:#101419/); assert.match(css,/--brand-muted:#808A9D/); assert.match(css,/\.header-account-avatar/); assert.match(css,/\.profile-avatar/); assert.match(css,/\.investor-card/); assert.doesNotMatch(css,/filter:grayscale\(1\)!important/); assert.match(css,/img,video,picture[^}]*filter:none!important/);
+  assert.match(css,/\.leader-panel,\.leaderboard-table,\.leaderboard\{background:transparent!important/); assert.match(css,/\.community-card\{background:#101419!important/);
+  const home=await readFile(path.join(root,'index.html'),'utf8'); assert.doesNotMatch(home,/class="academy-console"/); assert.match(css,/\.project-detail-main,\.project-detail-score/);
   assert.match(js,/page_view/); assert.match(js,/project_view/); assert.match(html,/site-settings\.css/); assert.match(html,/site-settings\.js/);
 });
 
@@ -133,7 +130,7 @@ test('Firebase auth confirms email with a site code and requires a Firebase emai
   const login=await readFile(path.join(root,'login.html'),'utf8');
   const register=await readFile(path.join(root,'register.html'),'utf8');
   const renderServer=await readFile(path.join(root,'render-server.mjs'),'utf8');
-  assert.doesNotMatch(auth,/sendEmailVerification/); assert.match(auth,/firebase-email-start/); assert.match(auth,/firebase-email-finish/); assert.match(auth,/sendSignInLinkToEmail/); assert.match(auth,/signInWithEmailLink/); assert.match(auth,/confirmedDeviceId/);
+  assert.doesNotMatch(auth,/sendEmailVerification/); assert.match(auth,/action: 'register'/); assert.match(auth,/verify-email/); assert.doesNotMatch(auth,/createUserWithEmailAndPassword/); assert.match(auth,/firebase-email-start/); assert.match(auth,/firebase-email-finish/); assert.match(auth,/sendSignInLinkToEmail/); assert.match(auth,/signInWithEmailLink/); assert.match(auth,/confirmedDeviceId/);
   assert.match(db,/accounts:lookup/); assert.match(db,/firebase-device-finish/); assert.match(db,/app_trusted_devices/);
   assert.match(migration,/app_auth_challenges/); assert.match(migration,/email_verified_at/); assert.match(firebaseMigration,/firebase_uid TEXT/);
   assert.match(renderServer,/0006_firebase_auth/); assert.match(register,/type="module" src="firebase-auth\.js(?:\?[^\"]+)?"/);
@@ -188,6 +185,8 @@ test('project workspace library, history, monochrome skin, and animated route ne
 test('leaderboard panel is transparent and email confirmation uses the on-site code flow', async () => {
   const css=await readFile(path.join(root,'enhancements.css'),'utf8'),auth=await readFile(path.join(root,'firebase-auth.js'),'utf8'),db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8');
   assert.match(css,/\.leader-panel\{background:transparent!important;border-color:transparent!important/);
+  assert.doesNotMatch(css,/filter:grayscale\(1\)!important/); assert.match(css,/--brand-teal:#14F195/); assert.match(css,/--brand-violet:#9945FF/); assert.match(css,/--brand-surface:#101419/); assert.match(css,/--brand-muted:#808A9D/);
+  assert.match(auth,/action: 'register'/); assert.match(auth,/verify-email/); assert.doesNotMatch(auth,/createUserWithEmailAndPassword/);
   assert.match(auth,/action: 'firebase-email-start'/); assert.match(auth,/firebase-email-finish/); assert.doesNotMatch(auth,/sendEmailVerification/);
   assert.match(db,/body\.action === 'firebase-email-start'/); assert.match(db,/body\.action === 'firebase-email-finish'/); assert.match(db,/purpose: 'email'/); assert.match(db,/firebase-verify/); assert.match(db,/COALESCE\(email_verified_at,now\(\)\)/);
 });

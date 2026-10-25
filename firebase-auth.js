@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
-  getAuth, createUserWithEmailAndPassword, updateProfile,
+  getAuth,
   signInWithEmailAndPassword, signOut, sendSignInLinkToEmail,
   isSignInWithEmailLink, signInWithEmailLink, EmailAuthProvider,
   reauthenticateWithCredential, updatePassword,
@@ -92,25 +92,16 @@ if (register) register.addEventListener('submit', async event => {
   const name = register.elements.fullName.value.trim(), email = register.elements.email.value.trim().toLowerCase();
   const password = register.elements.password.value, role = register.elements.role.value;
   if (password !== register.elements.passwordConfirm.value) { show(result, 'Пароли не совпадают — проверьте оба поля.', 'error'); register.elements.passwordConfirm.focus(); return; }
-  if (register.dataset.legacyPending === 'firebase-verify') {
+  if (register.dataset.legacyPending) {
     try {
-      const data = await call({ action: 'firebase-email-finish', email: register.elements.email.value.trim().toLowerCase(), code: register.elements.verificationCode.value.trim() });
+      const action = register.dataset.legacyPending === 'firebase-verify' ? 'firebase-email-finish' : 'verify-email';
+      const data = await call({ action, email: register.elements.email.value.trim().toLowerCase(), code: register.elements.verificationCode.value.trim() });
       cacheState(data); show(result, 'Почта подтверждена. Открываю профиль…'); setTimeout(() => { location.href = 'profile.html'; }, 250);
     } catch (error) { show(result, errorMessage(error), 'error'); }
     return;
   }
   try {
-    let user;
-    try { user = (await createUserWithEmailAndPassword(auth, email, password)).user; }
-    catch (error) {
-      if (error.code !== 'auth/email-already-in-use') throw error;
-      throw new Error('Этот email уже зарегистрирован в Firebase. Войдите в аккаунт, чтобы продолжить.');
-    }
-    await updateProfile(user, { displayName: name });
-    await call({ action: 'firebase-register', idToken: await user.getIdToken(true), email, name, role, investorFocus: register.elements.investorFocus?.value.trim() || '', ticketSize: register.elements.ticketSize?.value.trim() || '' });
-    const challenge = await call({ action: 'firebase-email-start', idToken: await user.getIdToken(true), email });
-    await signOut(auth);
-    if (challenge.alreadyVerified) { show(result, 'Адрес уже подтверждён. Войдите в аккаунт.'); return; }
+    const challenge = await call({ action: 'register', name, email, password, role, investorFocus: register.elements.investorFocus?.value.trim() || '', ticketSize: register.elements.ticketSize?.value.trim() || '' });
     legacyCodeStep(register, result, challenge);
     register.dataset.awaitingEmailVerification = 'true';
   } catch (error) { show(result, errorMessage(error), 'error'); }
@@ -134,7 +125,7 @@ if (login) login.addEventListener('submit', async event => {
     let credential;
     try { credential = await signInWithEmailAndPassword(auth, email, password); }
     catch (error) {
-      if (!['auth/user-not-found', 'auth/invalid-credential', 'auth/operation-not-allowed'].includes(error.code)) throw error;
+      if (!['auth/user-not-found', 'auth/invalid-credential', 'auth/operation-not-allowed', 'auth/network-request-failed'].includes(error.code)) throw error;
       const old = await fallbackLegacyLogin(email, password);
       if (old.legacy?.verificationRequired) { legacyCodeStep(login, result, old.legacy); return; }
       if (old.done) { show(result, 'Вход выполнен. Открываю профиль…'); setTimeout(() => { location.href = redirectAfterLogin(); }, 250); return; }
