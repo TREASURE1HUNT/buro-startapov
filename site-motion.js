@@ -15,13 +15,13 @@
     ctx?.setTransform(ratio, 0, 0, ratio, 0, 0);
   };
   const pathY = (u, lane, time) => {
-    const centralRise = Math.exp(-Math.pow((u - .49) / .16, 2));
+    const centralRise = Math.exp(-Math.pow((u - .49) / .17, 2));
     const leftRise = Math.exp(-Math.pow((u - .23) / .095, 2));
     const trough = Math.exp(-Math.pow((u - .37) / .07, 2));
     const rightRise = Math.exp(-Math.pow((u - .91) / .2, 2));
-    const drift = Math.sin(u * 8.2 - time * 1.7 + lane * .035) * height * .012;
-    return height * (.755 - .065 * u - .19 * centralRise - .065 * leftRise + .028 * trough - .045 * rightRise) +
-      (lane - 31.5) * height * .0042 + drift;
+    const drift = Math.sin(u * 8.2 - time * 1.7 + lane * .035) * height * .02;
+    return height * (.755 - .065 * u - .22 * centralRise - .065 * leftRise + .028 * trough - .055 * rightRise) +
+      (lane - 39.5) * height * .0065 + drift;
   };
   const draw = now => {
     if (!ctx) return;
@@ -29,8 +29,8 @@
     ctx.clearRect(0, 0, width, height);
     const time = reduced ? 0 : now * .00022;
     ctx.globalCompositeOperation = 'screen';
-    for (let lane = 0; lane < 64; lane++) {
-      const edge = Math.abs(lane - 31.5) / 31.5;
+    for (let lane = 0; lane < 80; lane++) {
+      const edge = Math.abs(lane - 39.5) / 39.5;
       const strength = (1 - edge * .58) * (.28 + ((lane * 17) % 11) / 17);
       const grad = ctx.createLinearGradient(0, 0, width, 0);
       grad.addColorStop(0, `rgba(112,109,255,${strength * .08})`);
@@ -44,8 +44,8 @@
         if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.strokeStyle = grad;
-      ctx.lineWidth = lane % 7 === 0 ? 1.35 : .82;
-      ctx.globalAlpha = lane % 7 === 0 ? .9 : .72;
+      ctx.lineWidth = lane % 7 === 0 ? 1.65 : 1.05;
+      ctx.globalAlpha = lane % 7 === 0 ? 1 : .82;
       ctx.shadowColor = palette[lane % palette.length];
       ctx.shadowBlur = lane % 7 === 0 ? 12 : 4;
       ctx.stroke();
