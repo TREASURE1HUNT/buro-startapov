@@ -103,6 +103,12 @@ test('account profile separates settings and owned startups into neutral tabs', 
   assert.match(css,/\.my-startups-panel\{[^}]*background:#101011/); assert.match(translations,/Мои стартапы':'My startups/);
 });
 
+test('homepage community block replaces washed-out project links with readable community cards', async () => {
+  const home=await readFile(path.join(root,'index.html'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8');
+  assert.match(home,/community-section/); assert.match(home,/Создавайте вместе с/); assert.match(home,/community-grid/); assert.match(home,/community-card/); assert.doesNotMatch(home,/Открыть ленту проектов/);
+  assert.match(css,/\.academy-projects\.community-section[^}]*background:#0a0a0d!important/); assert.match(css,/\.community-card p\{[^}]*color:#b8b8c0!important/); assert.match(css,/@media\(max-width:760px\)\{\.academy-projects\.community-section/);
+});
+
 test('homepage program illustrations stay flat and subdued without bright highlights', async () => {
   const css=await readFile(path.join(root,'enhancements.css'),'utf8');
   assert.match(css,/\.academy-module\.module-active,.academy-module\.module-active:hover\{background:#101011!important;box-shadow:none!important\}/);
