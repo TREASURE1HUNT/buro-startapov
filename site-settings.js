@@ -8,7 +8,7 @@
   const settingKey = 'buro-site-preferences-v1';
   let preferences = { language:'ru' };
   try { preferences = { ...preferences, ...JSON.parse(localStorage.getItem(settingKey) || '{}') }; } catch {}
-  const theme = () => { document.documentElement.dataset.siteTheme = 'dark'; document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#000000'); };
+  const theme = () => { document.documentElement.dataset.siteTheme = 'light'; document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#F2F8FA'); };
   const translate = value => preferences.language === 'en' && Object.hasOwn(labels, value.trim()) ? value.replace(value.trim(), labels[value.trim()]) : value;
   function translateTree(root = document) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
