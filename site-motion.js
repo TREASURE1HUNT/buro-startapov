@@ -47,9 +47,9 @@
       vec3 halfDir = normalize(lightDir+viewDir);
       float specular = pow(max(dot(n,halfDir),0.0),34.0);
       float crest = smoothstep(0.25,0.47,v_height) * (0.55+0.45*sin(v_position.x*1.3+u_time*0.5));
-      vec3 deep = vec3(0.055,0.341,0.2);
-      vec3 sea = vec3(0.353,0.808,0.502);
-      vec3 foam = vec3(0.667,0.82,0.808);
+      vec3 deep = vec3(0.114,0.114,0.2);
+      vec3 sea = vec3(0.31,0.31,0.4);
+      vec3 foam = vec3(0.51,0.506,0.8);
       vec3 color = mix(deep,sea,clamp(0.22+diffuse*0.58+(v_height+0.5)*0.13,0.0,1.0));
       color = mix(color,foam,clamp(specular*0.62+crest*0.24,0.0,0.72));
       float depth = 0.64 + 0.36*smoothstep(-9.0,7.0,v_position.z);
