@@ -177,29 +177,29 @@ test('English dictionary covers Russian strings rendered in the page templates',
   for(const file of (await htmlFiles).filter(name=>name.endsWith('.html'))){const source=await readFile(path.join(root,file),'utf8');if(source.includes('site-settings.js'))assert.match(source,/translations-en\.js/);}
 });
 
-test('project workspace library and history remain wired with the animated 3D ocean background', async () => {
+test('project workspace library and history remain wired with the animated luminous ribbon background', async () => {
   const create=await readFile(path.join(root,'create.html'),'utf8'),lib=await readFile(path.join(root,'project-library.js'),'utf8'),motion=await readFile(path.join(root,'site-motion.js'),'utf8'),index=await readFile(path.join(root,'index.html'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8');
-  assert.match(create,/data-workspace-tab="library"/);assert.match(create,/data-workspace-tab="history"/);assert.match(create,/data-workspace-tab="create"/);assert.match(lib,/api\/database\?action=projects/);assert.match(lib,/delete-project/);assert.match(lib,/buro-project-history-v1/);assert.match(index,/Создать проект/);assert.match(motion,/anime\?\.animate/);assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/heightAt\(vec2 p, float t\)/);assert.match(motion,/gl\.drawElements\(gl\.TRIANGLES/);assert.match(css,/\.ocean-wave-canvas/);assert.match(css,/--brand-bg:#1D1D33/);assert.doesNotMatch(create,/value="#b8f548"/);
+  assert.match(create,/data-workspace-tab="library"/);assert.match(create,/data-workspace-tab="history"/);assert.match(create,/data-workspace-tab="create"/);assert.match(lib,/api\/database\?action=projects/);assert.match(lib,/delete-project/);assert.match(lib,/buro-project-history-v1/);assert.match(index,/Создать проект/);assert.match(motion,/anime\?\.animate/);assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/pathY\(u, lane, time\)/);assert.match(motion,/ctx\.stroke\(\)/);assert.match(css,/\.ocean-wave-canvas/);assert.match(css,/--brand-bg:#1D1D33/);assert.doesNotMatch(create,/value="#b8f548"/);
 });
 
 test('leaderboard panel is transparent and email confirmation uses the on-site code flow', async () => {
   const css=await readFile(path.join(root,'enhancements.css'),'utf8'),auth=await readFile(path.join(root,'firebase-auth.js'),'utf8'),db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8'),motion=await readFile(path.join(root,'site-motion.js'),'utf8');
   assert.match(css,/\.leader-panel\{background:transparent!important;border-color:transparent!important/);
-  assert.doesNotMatch(css,/filter:grayscale\(1\)!important/); assert.match(css,/--brand-teal:#706DFF!important/); assert.match(css,/--brand-violet:#8281CC!important/); assert.match(css,/--brand-surface:#4F4F66!important/); assert.match(css,/--brand-muted:#C4C3D7!important/); assert.match(motion,/heightAt\(vec2 p, float t\)/);
+  assert.doesNotMatch(css,/filter:grayscale\(1\)!important/); assert.match(css,/--brand-teal:#706DFF!important/); assert.match(css,/--brand-violet:#8281CC!important/); assert.match(css,/--brand-surface:#4F4F66!important/); assert.match(css,/--brand-muted:#C4C3D7!important/); assert.match(motion,/pathY\(u, lane, time\)/);
   assert.match(auth,/action: 'register'/); assert.match(auth,/verify-email/); assert.doesNotMatch(auth,/createUserWithEmailAndPassword/);
   assert.match(auth,/action: 'firebase-email-start'/); assert.match(auth,/firebase-email-finish/); assert.doesNotMatch(auth,/sendEmailVerification/);
   assert.match(db,/body\.action === 'firebase-email-start'/); assert.match(db,/body\.action === 'firebase-email-finish'/); assert.match(db,/purpose: 'email'/); assert.match(db,/firebase-verify/); assert.match(db,/COALESCE\(email_verified_at,now\(\)\)/);
 });
 
-test('site uses the supplied periwinkle palette with the animated ocean and renders a procedural 3D ocean instead of route lines', async () => {
+test('site uses the supplied periwinkle palette with the animated ocean and renders animated palette ribbons instead of route lines', async () => {
   const motion=await readFile(path.join(root,'site-motion.js'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8'),settingsCss=await readFile(path.join(root,'site-settings.css'),'utf8');
-  assert.match(settings,/dataset\.siteTheme = 'dark'/); assert.match(motion,/heightAt\(vec2 p, float t\)/); assert.match(motion,/v_normal/); assert.match(motion,/gl\.drawElements\(gl\.TRIANGLES/); assert.match(motion,/requestAnimationFrame\(render\)/); assert.doesNotMatch(motion,/route-branch|route-wave-purple/);
+  assert.match(settings,/dataset\.siteTheme = 'dark'/); assert.match(motion,/pathY\(u, lane, time\)/); assert.match(motion,/palette = \[.*#706DFF/); assert.match(motion,/ctx\.stroke\(\)/); assert.match(motion,/requestAnimationFrame\(draw\)/); assert.doesNotMatch(motion,/route-branch|route-wave-purple/);
   assert.match(css,/--brand-bg:#1D1D33/); assert.match(css,/--brand-surface:#4F4F66/); assert.match(css,/--brand-text:#FFFFFF/); assert.match(css,/--brand-muted:#C4C3D7/); assert.match(css,/project-detail-score\{background:transparent!important/); assert.match(css,/body main :is\(h1,h2,h3,h4,p,label,small,span,b,strong,li,td,th,legend,summary,dt,dd,figcaption\)/); assert.match(css,/\.leader-row\{padding-block:24px!important;background:transparent!important\}/); assert.match(css,/\.showcase-stage\{border:0!important;box-shadow:none!important;background:transparent!important\}/); assert.match(css,/investor-empty-cta,html\[data-site-theme="dark"\] \.investor-row\{background:transparent!important/); assert.match(css,/\.ocean-wave-canvas/); assert.match(css,/\.academy-route-art\{display:none!important\}/); assert.match(settingsCss,/site-preferences-panel,html\[data-site-theme="dark"\] \.site-preferences-panel select/); assert.match(settingsCss,/html\[data-site-theme="dark"\] \.ai-result\{background:#35354D/);
 });
 
 test('ocean canvas respects reduced-motion and keeps the old route network hidden', async () => {
   const motion=await readFile(path.join(root,'site-motion.js'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8');
-  assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/fallbackCanvas/);assert.match(motion,/const reduced/);assert.match(css,/\.academy-route-art\{display:none!important\}/);assert.match(css,/\.ocean-wave-canvas\{position:fixed!important/);
+  assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/createElement\('canvas'\)/);assert.match(motion,/const reduced/);assert.match(css,/\.academy-route-art\{display:none!important\}/);assert.match(css,/\.ocean-wave-canvas\{position:fixed!important/);
 });
 
 test('site logo and favicon use the bird mark', async () => {
