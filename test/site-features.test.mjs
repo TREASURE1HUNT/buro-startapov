@@ -75,11 +75,11 @@ test('Render seed contains exactly twenty attributed public startup cards', asyn
   assert.match(sql,/ON CONFLICT\(id\) DO NOTHING/);
 });
 
-test('site settings include persistent RU/EN language control and the inverted ocean palette', async () => {
+test('site settings include persistent RU/EN language control and the dark ocean palette', async () => {
   const js=await readFile(path.join(root,'site-settings.js'),'utf8');
   const html=await readFile(path.join(root,'index.html'),'utf8');
-  assert.doesNotMatch(js,/id="site-theme"|themeSelect/); assert.match(js,/site-language/); assert.match(js,/localStorage\.setItem\(settingKey/); assert.match(js,/dataset\.siteTheme = 'light'/);
-  const css=await readFile(path.join(root,'enhancements.css'),'utf8'); assert.match(css,/--brand-teal:#087C87!important/); assert.match(css,/--brand-violet:#435FAE!important/); assert.match(css,/--brand-surface:#FFFFFF!important/); assert.match(css,/--brand-muted:#5E737C!important/); assert.match(css,/\.header-account-avatar/); assert.match(css,/\.profile-avatar/); assert.match(css,/\.investor-card/); assert.doesNotMatch(css,/filter:grayscale\(1\)!important/); assert.match(css,/img,video,picture[^}]*filter:none!important/);
+  assert.doesNotMatch(js,/id="site-theme"|themeSelect/); assert.match(js,/site-language/); assert.match(js,/localStorage\.setItem\(settingKey/); assert.match(js,/dataset\.siteTheme = 'dark'/);
+  const css=await readFile(path.join(root,'enhancements.css'),'utf8'); assert.match(css,/--brand-teal:#087C87!important/); assert.match(css,/--brand-violet:#435FAE!important/); assert.match(css,/--brand-surface:#101419!important/); assert.match(css,/--brand-muted:#9AA6B5!important/); assert.match(css,/\.header-account-avatar/); assert.match(css,/\.profile-avatar/); assert.match(css,/\.investor-card/); assert.doesNotMatch(css,/filter:grayscale\(1\)!important/); assert.match(css,/img,video,picture[^}]*filter:none!important/);
   assert.match(css,/html\[data-site-theme\] \.leader-panel,html\[data-site-theme\] \.leaderboard-table,html\[data-site-theme\] \.leaderboard\{background:transparent!important/); assert.match(css,/html\[data-site-theme\] \.community-card\{background:#FFFFFF!important/);
   const home=await readFile(path.join(root,'index.html'),'utf8'); assert.doesNotMatch(home,/class="academy-console"/); assert.match(css,/\.project-detail-main,\.project-detail-score/);
   assert.match(js,/page_view/); assert.match(js,/project_view/); assert.match(html,/site-settings\.css/); assert.match(html,/site-settings\.js/);
@@ -179,22 +179,22 @@ test('English dictionary covers Russian strings rendered in the page templates',
 
 test('project workspace library and history remain wired with the animated 3D ocean background', async () => {
   const create=await readFile(path.join(root,'create.html'),'utf8'),lib=await readFile(path.join(root,'project-library.js'),'utf8'),motion=await readFile(path.join(root,'site-motion.js'),'utf8'),index=await readFile(path.join(root,'index.html'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8');
-  assert.match(create,/data-workspace-tab="library"/);assert.match(create,/data-workspace-tab="history"/);assert.match(create,/data-workspace-tab="create"/);assert.match(lib,/api\/database\?action=projects/);assert.match(lib,/delete-project/);assert.match(lib,/buro-project-history-v1/);assert.match(index,/Создать проект/);assert.match(motion,/anime\?\.animate/);assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/heightAt\(vec2 p, float t\)/);assert.match(motion,/gl\.drawElements\(gl\.TRIANGLES/);assert.match(css,/\.ocean-wave-canvas/);assert.match(css,/--brand-bg:#F2F8FA/);assert.doesNotMatch(create,/value="#b8f548"/);
+  assert.match(create,/data-workspace-tab="library"/);assert.match(create,/data-workspace-tab="history"/);assert.match(create,/data-workspace-tab="create"/);assert.match(lib,/api\/database\?action=projects/);assert.match(lib,/delete-project/);assert.match(lib,/buro-project-history-v1/);assert.match(index,/Создать проект/);assert.match(motion,/anime\?\.animate/);assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/heightAt\(vec2 p, float t\)/);assert.match(motion,/gl\.drawElements\(gl\.TRIANGLES/);assert.match(css,/\.ocean-wave-canvas/);assert.match(css,/--brand-bg:#05090D/);assert.doesNotMatch(create,/value="#b8f548"/);
 });
 
 test('leaderboard panel is transparent and email confirmation uses the on-site code flow', async () => {
   const css=await readFile(path.join(root,'enhancements.css'),'utf8'),auth=await readFile(path.join(root,'firebase-auth.js'),'utf8'),db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8'),motion=await readFile(path.join(root,'site-motion.js'),'utf8');
   assert.match(css,/\.leader-panel\{background:transparent!important;border-color:transparent!important/);
-  assert.doesNotMatch(css,/filter:grayscale\(1\)!important/); assert.match(css,/--brand-teal:#087C87!important/); assert.match(css,/--brand-violet:#435FAE!important/); assert.match(css,/--brand-surface:#FFFFFF!important/); assert.match(css,/--brand-muted:#5E737C!important/); assert.match(motion,/heightAt\(vec2 p, float t\)/);
+  assert.doesNotMatch(css,/filter:grayscale\(1\)!important/); assert.match(css,/--brand-teal:#087C87!important/); assert.match(css,/--brand-violet:#435FAE!important/); assert.match(css,/--brand-surface:#101419!important/); assert.match(css,/--brand-muted:#9AA6B5!important/); assert.match(motion,/heightAt\(vec2 p, float t\)/);
   assert.match(auth,/action: 'register'/); assert.match(auth,/verify-email/); assert.doesNotMatch(auth,/createUserWithEmailAndPassword/);
   assert.match(auth,/action: 'firebase-email-start'/); assert.match(auth,/firebase-email-finish/); assert.doesNotMatch(auth,/sendEmailVerification/);
   assert.match(db,/body\.action === 'firebase-email-start'/); assert.match(db,/body\.action === 'firebase-email-finish'/); assert.match(db,/purpose: 'email'/); assert.match(db,/firebase-verify/); assert.match(db,/COALESCE\(email_verified_at,now\(\)\)/);
 });
 
-test('site inverts to a light palette and renders a procedural 3D ocean instead of route lines', async () => {
+test('site uses a dark ocean palette and renders a procedural 3D ocean instead of route lines', async () => {
   const motion=await readFile(path.join(root,'site-motion.js'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8'),settingsCss=await readFile(path.join(root,'site-settings.css'),'utf8');
-  assert.match(settings,/dataset\.siteTheme = 'light'/); assert.match(motion,/heightAt\(vec2 p, float t\)/); assert.match(motion,/v_normal/); assert.match(motion,/gl\.drawElements\(gl\.TRIANGLES/); assert.match(motion,/requestAnimationFrame\(render\)/); assert.doesNotMatch(motion,/route-branch|route-wave-purple/);
-  assert.match(css,/--brand-bg:#F2F8FA/); assert.match(css,/--brand-surface:#FFFFFF/); assert.match(css,/--brand-text:#0C1B23/); assert.match(css,/--brand-muted:#5E737C/); assert.match(css,/\.ocean-wave-canvas/); assert.match(css,/\.academy-route-art\{display:none!important\}/); assert.match(settingsCss,/site-preferences-panel,html\[data-site-theme="light"\] \.site-preferences-panel select/); assert.match(settingsCss,/html\[data-site-theme="light"\] \.ai-result\{background:#FFFFFF/);
+  assert.match(settings,/dataset\.siteTheme = 'dark'/); assert.match(motion,/heightAt\(vec2 p, float t\)/); assert.match(motion,/v_normal/); assert.match(motion,/gl\.drawElements\(gl\.TRIANGLES/); assert.match(motion,/requestAnimationFrame\(render\)/); assert.doesNotMatch(motion,/route-branch|route-wave-purple/);
+  assert.match(css,/--brand-bg:#05090D/); assert.match(css,/--brand-surface:#101419/); assert.match(css,/--brand-text:#F5F7FA/); assert.match(css,/--brand-muted:#9AA6B5/); assert.match(css,/\.ocean-wave-canvas/); assert.match(css,/\.academy-route-art\{display:none!important\}/); assert.match(settingsCss,/site-preferences-panel,html\[data-site-theme="dark"\] \.site-preferences-panel select/); assert.match(settingsCss,/html\[data-site-theme="dark"\] \.ai-result\{background:#101419/);
 });
 
 test('ocean canvas respects reduced-motion and keeps the old route network hidden', async () => {
