@@ -185,6 +185,13 @@ test('project workspace library, history, monochrome skin, and animated route ne
   assert.match(create,/data-workspace-tab="library"/);assert.match(create,/data-workspace-tab="history"/);assert.match(create,/data-workspace-tab="create"/);assert.match(lib,/api\/database\?action=projects/);assert.match(lib,/delete-project/);assert.match(lib,/buro-project-history-v1/);assert.match(index,/Создать проект/);assert.match(motion,/anime\?\.animate/);assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/route-branch/);assert.match(css,/\.academy-route-art/);assert.match(css,/--green:#aaa!important/);assert.doesNotMatch(create,/value="#b8f548"/);
 });
 
+test('brand palette uses animated teal and violet waves across the site', async () => {
+  const motion=await readFile(path.join(root,'site-motion.js'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8');
+  assert.match(settings,/content', '#000000'/); assert.match(motion,/stop-color="#14F195"/); assert.match(motion,/stop-color="#9945FF"/); assert.match(motion,/route-wave-teal/); assert.match(motion,/route-wave-purple/); assert.match(motion,/classList\.contains\('route-wave'\)/);
+  assert.match(css,/--green:#14F195!important/); assert.match(css,/--purple:#9945FF!important/); assert.match(css,/--bg:#000000!important/); assert.match(css,/--paper:#101419!important/); assert.match(css,/--muted:#808A9D!important/);
+  assert.match(css,/\.route-flow\{stroke:url\(#route-edge\)!important/); assert.match(css,/linear-gradient\(105deg,#14F195,#9945FF\)/);
+});
+
 test('shared motion design uses moving layered waves without station dots and flat neutral type', async () => {
   const motion=await readFile(path.join(root,'site-motion.js'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8');
   assert.match(motion,/route-flow/);assert.match(motion,/route-secondary/);assert.match(motion,/animate\('\.route-map'/);assert.match(motion,/pointermove/);assert.doesNotMatch(motion,/route-stations|route-runner/);assert.match(css,/\.route-glow/);assert.match(css,/\.route-fine/);assert.match(css,/gradient-text\{background:none!important;background-image:none!important;color:#ededee/);assert.match(css,/body:not\(\.academy-home\)>\.academy-route-art\{position:fixed;z-index:0/);

@@ -8,14 +8,17 @@
     art.setAttribute('aria-hidden', 'true');
     art.innerHTML = `<svg viewBox="0 0 1200 850" preserveAspectRatio="xMidYMid slice">
       <defs>
-        <linearGradient id="route-metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#777" stop-opacity=".08"/><stop offset=".48" stop-color="#c2c2c5" stop-opacity=".5"/><stop offset="1" stop-color="#555" stop-opacity=".16"/></linearGradient>
-        <linearGradient id="route-edge" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#d3d3d6" stop-opacity=".55"/><stop offset="1" stop-color="#65656a" stop-opacity=".05"/></linearGradient>
+        <linearGradient id="route-metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#14F195" stop-opacity=".16"/><stop offset=".48" stop-color="#14F195" stop-opacity=".66"/><stop offset="1" stop-color="#9945FF" stop-opacity=".3"/></linearGradient>
+        <linearGradient id="route-edge" x1="0" y1="0" x2="1" y2=".15"><stop stop-color="#14F195" stop-opacity=".78"/><stop offset=".52" stop-color="#14F195" stop-opacity=".48"/><stop offset="1" stop-color="#9945FF" stop-opacity=".78"/></linearGradient>
         <filter id="route-depth"><feGaussianBlur stdDeviation="5"/></filter>
       </defs>
       <g class="route-map">
         <path class="route-shadow" d="M-100 675C92 628 158 449 318 419S508 601 683 545 790 288 1003 270 1160 345 1290 410"/>
         <path class="route-glow" d="M-100 675C92 628 158 449 318 419S508 601 683 545 790 288 1003 270 1160 345 1290 410"/>
         <path id="route-main-path" class="route-branch" d="M-100 675C92 628 158 449 318 419S508 601 683 545 790 288 1003 270 1160 345 1290 410"/>
+        <path class="route-wave route-wave-teal" d="M-90 520C75 454 190 430 332 495S570 633 744 545 1010 385 1300 495"/>
+        <path class="route-wave route-wave-purple" d="M-100 580C82 513 211 491 358 555S602 688 780 603 1040 444 1310 558"/>
+        <path class="route-wave route-wave-fine" d="M-80 465C95 397 220 381 370 447S610 580 794 492 1065 335 1300 450"/>
         <path class="route-shadow" d="M318 419C350 283 263 194 208 54M318 419C257 492 155 524 70 502M683 545C621 679 732 753 811 900M683 545C763 620 887 659 1026 620M1003 270C948 156 1011 66 1095 -48M1003 270C1094 215 1170 161 1255 98"/>
         <path class="route-branch route-feeder" d="M318 419C350 283 263 194 208 54M318 419C257 492 155 524 70 502M683 545C621 679 732 753 811 900M683 545C763 620 887 659 1026 620M1003 270C948 156 1011 66 1095 -48M1003 270C1094 215 1170 161 1255 98"/>
         <path class="route-secondary" d="M-85 755C112 706 215 546 368 531S544 703 709 634 832 386 1039 367 1190 449 1300 502"/>
@@ -36,9 +39,9 @@
   }
   window.BuroMotion = { observe(element) { if (!revealObserver) return; element.style.opacity = '0'; revealObserver.observe(element); } };
   if (typeof animate !== 'function' || reduceMotion) return;
-  const paths = document.querySelectorAll('.route-branch, .route-glow, .route-feeder, .route-fine, .route-secondary');
+  const paths = document.querySelectorAll('.route-branch, .route-glow, .route-feeder, .route-fine, .route-secondary, .route-wave');
   paths.forEach((path, index) => {
-    if (path.classList.contains('route-secondary') || path.classList.contains('route-fine')) {
+    if (path.classList.contains('route-secondary') || path.classList.contains('route-fine') || path.classList.contains('route-wave')) {
       const flow = path.cloneNode(false);
       flow.removeAttribute('id');
       flow.removeAttribute('style');
