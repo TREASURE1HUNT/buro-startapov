@@ -124,7 +124,7 @@ test('evaluations are attached to the saved public project document and its deta
   assert.match(details,/root\.dataset\.aiEvaluation/);
 });
 
-test('Firebase auth verifies email and requires a Firebase email link on untrusted devices', async () => {
+test('Firebase auth confirms email with a site code and requires a Firebase email link on untrusted devices', async () => {
   const auth=await readFile(path.join(root,'firebase-auth.js'),'utf8');
   const db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8');
   const migration=await readFile(path.join(root,'netlify/database/migrations/0004_email_auth/migration.sql'),'utf8');
@@ -133,10 +133,10 @@ test('Firebase auth verifies email and requires a Firebase email link on untrust
   const login=await readFile(path.join(root,'login.html'),'utf8');
   const register=await readFile(path.join(root,'register.html'),'utf8');
   const renderServer=await readFile(path.join(root,'render-server.mjs'),'utf8');
-  assert.match(auth,/sendEmailVerification/); assert.match(auth,/sendSignInLinkToEmail/); assert.match(auth,/signInWithEmailLink/); assert.match(auth,/confirmedDeviceId/);
+  assert.doesNotMatch(auth,/sendEmailVerification/); assert.match(auth,/firebase-email-start/); assert.match(auth,/firebase-email-finish/); assert.match(auth,/sendSignInLinkToEmail/); assert.match(auth,/signInWithEmailLink/); assert.match(auth,/confirmedDeviceId/);
   assert.match(db,/accounts:lookup/); assert.match(db,/firebase-device-finish/); assert.match(db,/app_trusted_devices/);
   assert.match(migration,/app_auth_challenges/); assert.match(migration,/email_verified_at/); assert.match(firebaseMigration,/firebase_uid TEXT/);
-  assert.match(renderServer,/0006_firebase_auth/); assert.match(register,/type="module" src="firebase-auth\.js"/);
+  assert.match(renderServer,/0006_firebase_auth/); assert.match(register,/type="module" src="firebase-auth\.js(?:\?[^\"]+)?"/);
   assert.match(settings,/account-avatar-trigger/); assert.match(login,/href="register\.html"[^>]*>Нет аккаунта\?/);
 });
 
@@ -183,6 +183,13 @@ test('English dictionary covers Russian strings rendered in the page templates',
 test('project workspace library, history, monochrome skin, and animated route network are wired', async () => {
   const create=await readFile(path.join(root,'create.html'),'utf8'),lib=await readFile(path.join(root,'project-library.js'),'utf8'),motion=await readFile(path.join(root,'site-motion.js'),'utf8'),index=await readFile(path.join(root,'index.html'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8');
   assert.match(create,/data-workspace-tab="library"/);assert.match(create,/data-workspace-tab="history"/);assert.match(create,/data-workspace-tab="create"/);assert.match(lib,/api\/database\?action=projects/);assert.match(lib,/delete-project/);assert.match(lib,/buro-project-history-v1/);assert.match(index,/Создать проект/);assert.match(motion,/anime\?\.animate/);assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/route-branch/);assert.match(css,/\.academy-route-art/);assert.match(css,/--green:#aaa!important/);assert.doesNotMatch(create,/value="#b8f548"/);
+});
+
+test('leaderboard panel is transparent and email confirmation uses the on-site code flow', async () => {
+  const css=await readFile(path.join(root,'enhancements.css'),'utf8'),auth=await readFile(path.join(root,'firebase-auth.js'),'utf8'),db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8');
+  assert.match(css,/\.leader-panel\{background:transparent!important;border-color:transparent!important/);
+  assert.match(auth,/action: 'firebase-email-start'/); assert.match(auth,/firebase-email-finish/); assert.doesNotMatch(auth,/sendEmailVerification/);
+  assert.match(db,/body\.action === 'firebase-email-start'/); assert.match(db,/body\.action === 'firebase-email-finish'/); assert.match(db,/purpose: 'email'/); assert.match(db,/firebase-verify/); assert.match(db,/COALESCE\(email_verified_at,now\(\)\)/);
 });
 
 test('brand palette uses animated teal and violet waves across the site', async () => {

@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
-  getAuth, createUserWithEmailAndPassword, sendEmailVerification, updateProfile,
+  getAuth, createUserWithEmailAndPassword, updateProfile,
   signInWithEmailAndPassword, signOut, sendSignInLinkToEmail,
   isSignInWithEmailLink, signInWithEmailLink, EmailAuthProvider,
   reauthenticateWithCredential, updatePassword,
@@ -92,6 +92,13 @@ if (register) register.addEventListener('submit', async event => {
   const name = register.elements.fullName.value.trim(), email = register.elements.email.value.trim().toLowerCase();
   const password = register.elements.password.value, role = register.elements.role.value;
   if (password !== register.elements.passwordConfirm.value) { show(result, 'Пароли не совпадают — проверьте оба поля.', 'error'); register.elements.passwordConfirm.focus(); return; }
+  if (register.dataset.legacyPending === 'firebase-verify') {
+    try {
+      const data = await call({ action: 'firebase-email-finish', email: register.elements.email.value.trim().toLowerCase(), code: register.elements.verificationCode.value.trim() });
+      cacheState(data); show(result, 'Почта подтверждена. Открываю профиль…'); setTimeout(() => { location.href = 'profile.html'; }, 250);
+    } catch (error) { show(result, errorMessage(error), 'error'); }
+    return;
+  }
   try {
     let user;
     try { user = (await createUserWithEmailAndPassword(auth, email, password)).user; }
@@ -101,10 +108,11 @@ if (register) register.addEventListener('submit', async event => {
     }
     await updateProfile(user, { displayName: name });
     await call({ action: 'firebase-register', idToken: await user.getIdToken(true), email, name, role, investorFocus: register.elements.investorFocus?.value.trim() || '', ticketSize: register.elements.ticketSize?.value.trim() || '' });
-    await sendEmailVerification(user, { url: `${location.origin}/login.html?verified=1`, handleCodeInApp: false });
+    const challenge = await call({ action: 'firebase-email-start', idToken: await user.getIdToken(true), email });
     await signOut(auth);
+    if (challenge.alreadyVerified) { show(result, 'Адрес уже подтверждён. Войдите в аккаунт.'); return; }
+    legacyCodeStep(register, result, challenge);
     register.dataset.awaitingEmailVerification = 'true';
-    show(result, `Письмо для подтверждения отправлено на ${email}. Откройте ссылку в письме, затем войдите на сайте.`);
   } catch (error) { show(result, errorMessage(error), 'error'); }
 }, true);
 
@@ -114,8 +122,9 @@ if (login) login.addEventListener('submit', async event => {
   const result = document.querySelector('#login-result');
   if (login.dataset.legacyPending) {
     try {
-      const data = await call({ action: login.dataset.legacyPending === 'register' ? 'verify-email' : 'verify-login', email: login.elements.email.value.trim().toLowerCase(), code: login.elements.verificationCode.value.trim() });
-      cacheState(data); show(result, 'Подтверждение выполнено. Открываю профиль…'); setTimeout(() => { location.href = redirectAfterLogin(); }, 250);
+      const action = login.dataset.legacyPending === 'firebase-verify' ? 'firebase-email-finish' : login.dataset.legacyPending === 'register' ? 'verify-email' : 'verify-login';
+      const data = await call({ action, email: login.elements.email.value.trim().toLowerCase(), code: login.elements.verificationCode.value.trim() });
+      cacheState(data); show(result, login.dataset.legacyPending === 'firebase-verify' ? 'Почта подтверждена. Вход выполнен…' : 'Подтверждение выполнено. Открываю профиль…'); setTimeout(() => { location.href = redirectAfterLogin(); }, 250);
     } catch (error) { show(result, error.message, 'error'); }
     return;
   }
@@ -131,11 +140,6 @@ if (login) login.addEventListener('submit', async event => {
       if (old.done) { show(result, 'Вход выполнен. Открываю профиль…'); setTimeout(() => { location.href = redirectAfterLogin(); }, 250); return; }
       throw error;
     }
-    if (!credential.user.emailVerified) {
-      await sendEmailVerification(credential.user, { url: `${location.origin}/login.html?verified=1`, handleCodeInApp: false });
-      await signOut(auth);
-      show(result, `Адрес почты ещё не подтверждён. Мы повторно отправили ссылку на ${email}.`, 'error'); return;
-    }
     let data;
     try { data = await call({ action: 'firebase-session', idToken: await credential.user.getIdToken(true), email }); }
     catch (error) {
@@ -144,6 +148,12 @@ if (login) login.addEventListener('submit', async event => {
         throw new Error('Аккаунт создан до подключения Firebase. Напишите в поддержку, чтобы связать его с Firebase.');
       }
       throw error;
+    }
+    if (data.verificationRequired && data.purpose === 'email') {
+      const challenge = await call({ action: 'firebase-email-start', idToken: await credential.user.getIdToken(true), email });
+      await signOut(auth);
+      if (challenge.alreadyVerified) { show(result, 'Почта подтверждена. Повторите вход.'); return; }
+      legacyCodeStep(login, result, challenge); return;
     }
     if (data.verificationRequired && data.purpose === 'device-link') {
       const pendingDeviceId = deviceId();

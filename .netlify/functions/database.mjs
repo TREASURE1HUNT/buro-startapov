@@ -67,8 +67,8 @@ async function sendEmailCode(email, purpose, code) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
   if (!apiKey || !from) return { ok: false, error: 'Для подтверждения почты настройте RESEND_API_KEY и EMAIL_FROM в Render.' };
-  const subject = purpose === 'register' ? 'Подтверждение аккаунта — Бюро стартапов' : 'Код входа — Бюро стартапов';
-  const explanation = purpose === 'register' ? 'Введите этот код на сайте, чтобы подтвердить адрес почты и завершить регистрацию.' : 'Введите этот код на сайте, чтобы подтвердить вход с нового устройства.';
+  const subject = purpose === 'register' || purpose === 'firebase-verify' ? 'Подтверждение почты — Бюро стартапов' : 'Код входа — Бюро стартапов';
+  const explanation = purpose === 'register' || purpose === 'firebase-verify' ? 'Введите этот код на сайте, чтобы подтвердить адрес почты и завершить регистрацию.' : 'Введите этот код на сайте, чтобы подтвердить вход с нового устройства.';
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
@@ -149,6 +149,34 @@ export default async function handler(req) {
       if (!rows.length) return reply({ error: 'Не удалось создать Firebase-профиль. Попробуйте войти в существующий аккаунт.' }, 409);
       return reply({ ok: true, email: identity.email }, 201);
     }
+    if (body.action === 'firebase-email-start') {
+      const identity = await firebaseIdentity(body.idToken);
+      if (identity.error) return reply({ error: identity.error }, identity.error.includes('ещё не подключён') ? 503 : 401);
+      if (identity.email !== emailOf(body.email) || !validDeviceId(body.deviceId)) return reply({ error: 'Сеанс или устройство не подтверждены.' }, 400);
+      const rows = await db.sql`SELECT firebase_uid,email_verified_at FROM app_accounts WHERE email=${identity.email} LIMIT 1`;
+      const account = rows[0];
+      if (!account || account.firebase_uid !== identity.uid) return reply({ error: 'Профиль для этого email не найден.' }, 404);
+      if (account.email_verified_at) return reply({ alreadyVerified: true, email: identity.email });
+      const deviceHash = hash(`device:${body.deviceId}`), deviceLabel = String(body.deviceLabel || 'Browser').slice(0, 80);
+      const challenge = await createAuthChallenge(identity.email, 'firebase-verify', { firebaseUid: identity.uid, deviceLabel }, deviceHash, deviceLabel);
+      return challenge.ok ? reply({ verificationRequired: true, purpose: 'firebase-verify', email: identity.email, message: `Код подтверждения отправлен на ${identity.email}.` }, 202) : reply({ error: challenge.error }, challenge.status);
+    }
+    if (body.action === 'firebase-email-finish') {
+      const email = emailOf(body.email);
+      if (!email || !validDeviceId(body.deviceId)) return reply({ error: 'Обновите страницу и запросите новый код.' }, 400);
+      const verified = await verifyAuthChallenge(email, 'firebase-verify', body.code);
+      if (!verified.ok) return reply({ error: verified.error }, 400);
+      const { challenge } = verified, deviceHash = hash(`device:${body.deviceId}`);
+      if (challenge.device_hash !== deviceHash) return reply({ error: 'Код отправлен для другого устройства. Запросите новый код в этом браузере.' }, 403);
+      const uid = String(challenge.payload?.firebaseUid || '');
+      if (!uid) return reply({ error: 'Запрос подтверждения устарел. Запросите новый код.' }, 400);
+      const account = await db.sql`UPDATE app_accounts SET email_verified_at=COALESCE(email_verified_at,now()),updated_at=now() WHERE email=${email} AND firebase_uid=${uid} RETURNING email`;
+      if (!account.length) return reply({ error: 'Аккаунт не найден. Войдите и запросите новый код.' }, 404);
+      await trustDevice(email, deviceHash, String(challenge.payload?.deviceLabel || body.deviceLabel || 'Browser').slice(0, 80));
+      await db.sql`DELETE FROM app_auth_challenges WHERE email=${email} AND purpose='firebase-verify'`;
+      await db.sql`INSERT INTO app_analytics(event_name,route) VALUES('signup','/register') ON CONFLICT DO NOTHING`;
+      return reply(await stateFor(email), 200, { 'set-cookie': await setSession(email) });
+    }
     if (body.action === 'firebase-session') {
       const identity = await firebaseIdentity(body.idToken);
       if (identity.error) return reply({ error: identity.error }, identity.error.includes('ещё не подключён') ? 503 : 401);
@@ -156,8 +184,8 @@ export default async function handler(req) {
       const rows = await db.sql`SELECT email,name,role,profile,created_at,email_verified_at,firebase_uid FROM app_accounts WHERE email=${identity.email} LIMIT 1`;
       const user = rows[0];
       if (!user || user.firebase_uid !== identity.uid) return reply({ error: 'Профиль не найден. Завершите регистрацию через Firebase.' }, 404);
-      if (!identity.emailVerified) return reply({ error: 'Подтвердите адрес почты по ссылке в письме Firebase.', verificationRequired: true }, 403);
-      if (!user.email_verified_at) {
+      if (!identity.emailVerified && !user.email_verified_at) return reply({ verificationRequired: true, purpose: 'email', email: identity.email, message: 'Подтвердите адрес почты кодом из письма.' }, 202);
+      if (identity.emailVerified && !user.email_verified_at) {
         await db.sql`UPDATE app_accounts SET email_verified_at=now(),updated_at=now() WHERE email=${identity.email}`;
         await db.sql`INSERT INTO app_analytics(event_name,route) VALUES('signup','/register')`;
       }
