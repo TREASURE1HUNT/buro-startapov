@@ -5,9 +5,8 @@
   canvas.setAttribute('aria-hidden', 'true');
   document.body.prepend(canvas);
   const ctx = canvas.getContext('2d', { alpha: true });
-  const palette = ['#706DFF', '#8281CC', '#7F7F99', '#8281CC', '#706DFF'];
   let width = 0, height = 0, ratio = 1;
-  let samples = [], lanes = [], frame = 0;
+  let samples = [], surfaceGradient, frame = 0;
   const buildWaveCache = () => {
     samples = [];
     for (let x = 0; x <= width; x += 3) {
@@ -19,18 +18,12 @@
       samples.push({ x, u, sinU:Math.sin(u * 8.2), cosU:Math.cos(u * 8.2),
         baseY: height * (.755 - .065 * u - .22 * centralRise - .065 * leftRise + .028 * trough - .055 * rightRise) });
     }
-    lanes = Array.from({ length:80 }, (_, lane) => {
-      const edge = Math.abs(lane - 39.5) / 39.5;
-      const strength = (1 - edge * .58) * (.28 + ((lane * 17) % 11) / 17);
-      const grad = ctx.createLinearGradient(0, 0, width, 0);
-      grad.addColorStop(0, `rgba(112,109,255,${strength * .08})`);
-      grad.addColorStop(.22, `rgba(130,129,204,${strength * .52})`);
-      grad.addColorStop(.48, `rgba(127,127,153,${strength * .42})`);
-      grad.addColorStop(.68, `rgba(130,129,204,${strength * .58})`);
-      grad.addColorStop(1, `rgba(112,109,255,${strength * .12})`);
-      return { lane, grad, lineWidth:lane % 7 === 0 ? 1.65 : 1.05, alpha:lane % 7 === 0 ? 1 : .82,
-        shadowColor:palette[lane % palette.length], shadowBlur:lane % 7 === 0 ? 12 : 4 };
-    });
+    surfaceGradient = ctx.createLinearGradient(0, 0, width, 0);
+    surfaceGradient.addColorStop(0, 'rgba(112,109,255,.10)');
+    surfaceGradient.addColorStop(.22, 'rgba(130,129,204,.21)');
+    surfaceGradient.addColorStop(.48, 'rgba(127,127,153,.16)');
+    surfaceGradient.addColorStop(.70, 'rgba(130,129,204,.23)');
+    surfaceGradient.addColorStop(1, 'rgba(112,109,255,.09)');
   };
   const resize = () => {
     width = window.innerWidth; height = window.innerHeight;
@@ -50,24 +43,26 @@
     ctx.clearRect(0, 0, width, height);
     const time = reduced ? 0 : now * .00022;
     ctx.globalCompositeOperation = 'screen';
-    for (const item of lanes) {
-      const { lane } = item;
-      const phase = lane * .035 - time * 1.7;
-      const phaseSin = Math.sin(phase), phaseCos = Math.cos(phase);
-      ctx.beginPath();
-      for (let i = 0; i < samples.length; i++) {
-        const sample = samples[i];
-        const drift = (sample.sinU * phaseCos + sample.cosU * phaseSin) * height * .02;
-        const y = sample.baseY + (lane - 39.5) * height * .0065 + drift;
-        if (i === 0) ctx.moveTo(sample.x, y); else ctx.lineTo(sample.x, y);
-      }
-      ctx.strokeStyle = item.grad;
-      ctx.lineWidth = item.lineWidth;
-      ctx.globalAlpha = item.alpha;
-      ctx.shadowColor = item.shadowColor;
-      ctx.shadowBlur = item.shadowBlur;
-      ctx.stroke();
+    const phase = 39.5 * .035 - time * 1.7;
+    const phaseSin = Math.sin(phase), phaseCos = Math.cos(phase);
+    const halfDepth = height * .25675;
+    ctx.beginPath();
+    for (let i = 0; i < samples.length; i++) {
+      const sample = samples[i];
+      const drift = (sample.sinU * phaseCos + sample.cosU * phaseSin) * height * .02;
+      const y = sample.baseY + drift - halfDepth;
+      if (i === 0) ctx.moveTo(sample.x, y); else ctx.lineTo(sample.x, y);
     }
+    for (let i = samples.length - 1; i >= 0; i--) {
+      const sample = samples[i];
+      const drift = (sample.sinU * phaseCos + sample.cosU * phaseSin) * height * .02;
+      ctx.lineTo(sample.x, sample.baseY + drift + halfDepth);
+    }
+    ctx.closePath();
+    ctx.fillStyle = surfaceGradient;
+    ctx.shadowColor = 'rgba(112,109,255,.28)';
+    ctx.shadowBlur = 26;
+    ctx.fill();
     ctx.shadowBlur = 0; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     if (!reduced && !document.hidden) frame = requestAnimationFrame(draw);
   };
