@@ -10,9 +10,10 @@ process.env.INFERENCE_BASE_URL = 'https://inference.example.test/v1';
 process.env.INFERENCE_MODEL = 'test-model';
 const { default: evaluate } = await import('../.netlify/functions/evaluate.mjs');
 const { default: translate } = await import('../.netlify/functions/translate.mjs');
+const { default: support } = await import('../.netlify/functions/support.mjs');
 
 test('startup content translation preserves item order and validates bounded input', async () => {
-  globalThis.fetch = async (url, options) => { assert.equal(url,'https://inference.example.test/v1/chat/completions'); return new Response(JSON.stringify({ choices:[{message:{content:'["A useful product description", "A customer problem"]'}}] }), {status:200}); };
+  globalThis.fetch = async (url, options) => { assert.equal(url,'https://inference.example.test/v1/chat/completions'); return new Response(JSON.stringify({ choices:[{message:{content:'<think>Translate carefully.</think>\n["A useful product description", "A customer problem"]'}}] }), {status:200}); };
   const response=await translate(new Request('https://example.test/api/translate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({language:'en',texts:['Полезное описание продукта','Проблема клиента']})}));
   assert.equal(response.status,200); assert.deepEqual((await response.json()).translations,['A useful product description','A customer problem']);
   const invalid=await translate(new Request('https://example.test/api/translate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({language:'xx',texts:['x']})}));
@@ -82,6 +83,20 @@ test('AI score is derived from six weighted criteria and returns evidence/gaps',
   assert.equal(result.rubric[0].weight,20);
   assert.equal(result.rubric[1].gap,'Нет ссылки на проверку');
   assert.deepEqual(result.next_steps,['Провести 10 интервью']);
+});
+
+test('AI evaluator extracts valid JSON when a model wraps it in a thinking block', async () => {
+  const keys=['problem','demand','customer','solution','business','execution'];
+  const result={criteria:Object.fromEntries(keys.map(key=>[key,{score:70,evidence:'Данные проекта',gap:'Нужно подтвердить'}])),strengths:[],risks:[],next_steps:[],missing_evidence:[],summary:'Проверка'};
+  globalThis.fetch=async()=>new Response(JSON.stringify({choices:[{message:{content:`<think>Let me reason through the request.</think>\n${JSON.stringify(result)}`}}]}),{status:200});
+  const response=await evaluate(new Request('https://site.test/api/evaluate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:'Тест',category:'SaaS',stage:'Идея',problem:'Проблема',audience:'Клиенты',value:'Решение'})}));
+  assert.equal(response.status,200); assert.equal((await response.json()).score,70);
+});
+
+test('AI support strips internal thinking blocks from user-facing answers', async () => {
+  globalThis.fetch=async()=>new Response(JSON.stringify({choices:[{message:{content:'<think>Private reasoning.</think>Вот краткий ответ.'}}]}),{status:200});
+  const response=await support(new Request('https://site.test/api/support',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message:'Что дальше?'})}));
+  assert.equal(response.status,200); assert.equal((await response.json()).answer,'Вот краткий ответ.');
 });
 
 test('AI evaluator validates required fields before contacting the model', async () => {

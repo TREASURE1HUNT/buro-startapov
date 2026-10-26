@@ -9,7 +9,7 @@
 ```powershell
 $env:INFERENCE_API_KEY="ваш API-ключ"
 $env:INFERENCE_BASE_URL="https://inference.dahl.global/v1"
-$env:INFERENCE_MODEL="zai-org/GLM-5.3-Flash"
+$env:INFERENCE_MODEL="MiniMaxAI/MiniMax-M2.7"
 node server.js
 ```
 
@@ -25,7 +25,7 @@ node server.js
 
 ## Netlify
 
-Repository settings in Netlify: **Add new site → Import an existing project → GitHub → TREASURE1HUNT/buro-startapov**. Build command can stay empty; publish directory is `.` from `netlify.toml`. Add environment variables `INFERENCE_BASE_URL=https://inference.dahl.global/v1`, `INFERENCE_MODEL=zai-org/GLM-5.3-Flash`, and `INFERENCE_API_KEY` in the Netlify dashboard, then deploy. Never put the actual key in Git or frontend code. The Netlify functions power AI analysis and chat. The local Node API also supports registration/login; persistent accounts on Netlify need an external database/auth provider, while the current browser-only demo profile is not synchronized across devices.
+Repository settings in Netlify: **Add new site → Import an existing project → GitHub → TREASURE1HUNT/buro-startapov**. Build command can stay empty; publish directory is `.` from `netlify.toml`. Add environment variables `INFERENCE_BASE_URL=https://inference.dahl.global/v1`, `INFERENCE_MODEL=MiniMaxAI/MiniMax-M2.7`, and `INFERENCE_API_KEY` in the Netlify dashboard, then deploy. Never put the actual key in Git or frontend code. The Netlify functions power AI analysis and chat. The local Node API also supports registration/login; persistent accounts on Netlify need an external database/auth provider, while the current browser-only demo profile is not synchronized across devices.
 # Хранилище сайта — Render Postgres
 
 Render Postgres и Web Service описаны в `render.yaml`. `render-server.mjs` применяет версии миграций при старте. Postgres хранит аккаунты/сессии, проекты с медиа, голоса, пользовательские записи, аналитику и импортированные карточки стартапов. `DATABASE_URL` берётся из внутреннего соединения Render и остаётся только на сервере.

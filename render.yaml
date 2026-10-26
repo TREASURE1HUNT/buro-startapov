@@ -27,7 +27,7 @@ services:
       - key: INFERENCE_BASE_URL
         value: https://inference.dahl.global/v1
       - key: INFERENCE_MODEL
-        value: zai-org/GLM-5.3-Flash
+        value: MiniMaxAI/MiniMax-M2.7
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM

@@ -1,7 +1,7 @@
 const configuredKey = process.env.INFERENCE_API_KEY || process.env.OPENAI_API_KEY;
 const isDahl = Boolean(process.env.INFERENCE_API_KEY) || configuredKey?.startsWith('dahl_');
 const base = (process.env.INFERENCE_BASE_URL || (isDahl ? 'https://inference.dahl.global/v1' : 'https://api.openai.com/v1')).replace(/\/$/, '');
-const model = process.env.INFERENCE_MODEL || process.env.OPENAI_MODEL || (isDahl ? 'zai-org/GLM-5.3-Flash' : 'gpt-4.1-mini');
+const model = process.env.INFERENCE_MODEL || process.env.OPENAI_MODEL || (isDahl ? 'MiniMaxAI/MiniMax-M2.7' : 'gpt-4.1-mini');
 const rubric = [
   ['problem', 'Ясность и масштаб проблемы', 20],
   ['demand', 'Подтверждение спроса', 20],
@@ -13,6 +13,36 @@ const rubric = [
 const clampText = (value, max = 1200) => String(value || '').trim().slice(0, max);
 const validScore = value => Number.isInteger(value) && value >= 0 && value <= 100;
 const error = (message, status) => Response.json({ error: message }, { status });
+function parseEvaluationContent(value) {
+  const sources = [
+    String(value || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<analysis>[\s\S]*?<\/analysis>/gi, ''),
+    String(value || ''),
+  ];
+  for (const source of sources) {
+    for (let start = source.indexOf('{'); start >= 0; start = source.indexOf('{', start + 1)) {
+      let depth = 0, quoted = false, escaped = false;
+      for (let i = start; i < source.length; i++) {
+        const char = source[i];
+        if (quoted) {
+          if (escaped) escaped = false;
+          else if (char === '\\') escaped = true;
+          else if (char === '"') quoted = false;
+          continue;
+        }
+        if (char === '"') quoted = true;
+        else if (char === '{') depth++;
+        else if (char === '}' && --depth === 0) {
+          try {
+            const result = JSON.parse(source.slice(start, i + 1));
+            if (result && typeof result === 'object' && result.criteria) return result;
+          } catch {}
+          break;
+        }
+      }
+    }
+  }
+  throw new Error('ИИ вернул пустой или некорректный JSON. Повторите анализ.');
+}
 
 export default async function handler(req) {
   if (req.method !== 'POST') return error('Method not allowed', 405);
@@ -35,7 +65,7 @@ export default async function handler(req) {
     try { data = JSON.parse(rawResponse); } catch { return error('Inference API вернул пустой или некорректный ответ.', 502); }
     if (!response.ok) return error(data.error?.message || 'Ошибка inference API', 502);
     const raw = data.choices?.[0]?.message?.content || '';
-    const result = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, ''));
+    const result = parseEvaluationContent(raw);
     if (!result.criteria || rubric.some(([key]) => !validScore(result.criteria[key]?.score))) throw new Error('ИИ вернул неполную оценку по критериям. Повторите анализ.');
     for (const [key] of rubric) {
       result.criteria[key].evidence = clampText(result.criteria[key].evidence, 400);

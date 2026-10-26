@@ -1,7 +1,7 @@
 const configuredKey = process.env.INFERENCE_API_KEY || process.env.OPENAI_API_KEY;
 const isDahl = Boolean(process.env.INFERENCE_API_KEY) || configuredKey?.startsWith('dahl_');
 const base = (process.env.INFERENCE_BASE_URL || (isDahl ? 'https://inference.dahl.global/v1' : 'https://api.openai.com/v1')).replace(/\/$/, '');
-const model = process.env.INFERENCE_MODEL || process.env.OPENAI_MODEL || (isDahl ? 'zai-org/GLM-5.3-Flash' : 'gpt-4.1-mini');
+const model = process.env.INFERENCE_MODEL || process.env.OPENAI_MODEL || (isDahl ? 'MiniMaxAI/MiniMax-M2.7' : 'gpt-4.1-mini');
 const headers = { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-allow-headers': 'Content-Type' };
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers });
 export default async function handler(req) {
@@ -17,6 +17,7 @@ export default async function handler(req) {
     const response = await fetch(base + '/chat/completions', { method:'POST', headers:{ authorization:'Bearer '+configuredKey, 'content-type':'application/json' }, body:JSON.stringify({ model, temperature:.3, max_tokens:2048, messages:[{ role:'system', content:`Ты — ИИ-помощник Бюро стартапов. Помогай с гипотезами, аккаунтом, созданием проекта и следующим шагом. Методика: 25% ИИ, 25% наставник, 50% сообщество. Отвечай по делу на ${language}. Если пользователь спрашивает, как пользоваться разделом сайта, объясни путь внутри интерфейса. Используй обычный Markdown без буквальных маркеров ** вокруг всего ответа.` }, ...history, { role:'user', content:payload.message }] }) });
     let data; try { data = await response.json(); } catch { data = {}; }
     if (!response.ok) return json({ error:response.status===401 ? 'Ключ ИИ не принят. Проверьте INFERENCE_API_KEY в Netlify.' : data.error?.message || 'Ошибка inference API' }, 502);
-    return json({ answer:data.choices?.[0]?.message?.content || 'Пустой ответ модели.' });
+    const answer=String(data.choices?.[0]?.message?.content||'').replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/<think>[\s\S]*$/gi,'').replace(/<analysis>[\s\S]*?<\/analysis>/gi,'').trim();
+    return json({ answer:answer || 'Пустой ответ модели.' });
   } catch (error) { return json({ error:error.message || 'Ошибка ИИ-поддержки.' }, 502); }
 }

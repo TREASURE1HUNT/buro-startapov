@@ -8,10 +8,11 @@ export default async function handler(request) {
   if (!key) return json(503, { error: 'Translation service is not configured' });
   try {
     const base=(process.env.INFERENCE_BASE_URL || (process.env.INFERENCE_API_KEY || key.startsWith('dahl_') ? 'https://inference.dahl.global/v1' : 'https://api.openai.com/v1')).replace(/\/$/,'');
-    const response = await fetch(`${base}/chat/completions`, { method: 'POST', headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' }, body: JSON.stringify({ model: process.env.INFERENCE_MODEL || 'zai-org/GLM-5.3-Flash', temperature: 0.1, messages: [{ role: 'system', content: `Translate each input string into ${language}. Preserve technical names, URLs and product names. Return only a JSON array of strings in the exact same order and length.` }, { role: 'user', content: JSON.stringify(texts) }] }) });
+    const response = await fetch(`${base}/chat/completions`, { method: 'POST', headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' }, body: JSON.stringify({ model: process.env.INFERENCE_MODEL || 'MiniMaxAI/MiniMax-M2.7', temperature: 0.1, chat_template_kwargs: { enable_thinking: false }, messages: [{ role: 'system', content: `Translate each input string into ${language}. Preserve technical names, URLs and product names. Return only a JSON array of strings in the exact same order and length.` }, { role: 'user', content: JSON.stringify(texts) }] }) });
     const result = await response.json(); if (!response.ok) return json(502, { error: 'Translation provider error' });
-    const content = String(result.choices?.[0]?.message?.content || '').replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
-    const translated = JSON.parse(content);
+    const content = String(result.choices?.[0]?.message?.content || '').replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/<think>[\s\S]*$/gi,'').replace(/<analysis>[\s\S]*?<\/analysis>/gi,'').replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
+    const start=content.indexOf('['),end=content.lastIndexOf(']');
+    const translated = JSON.parse(start>=0&&end>start?content.slice(start,end+1):content);
     if (!Array.isArray(translated) || translated.length !== texts.length || translated.some(t => typeof t !== 'string')) return json(502, { error: 'Invalid translation response' });
     return json(200, { translations: translated });
   } catch { return json(502, { error: 'Translation service is temporarily unavailable' }); }
