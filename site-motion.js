@@ -39,6 +39,10 @@
     canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
     ctx?.setTransform(ratio, 0, 0, ratio, 0, 0);
     if (ctx && width) buildWaveCache();
+    if (reduced && width) {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(draw);
+    }
   };
   const draw = now => {
     if (!ctx) return;

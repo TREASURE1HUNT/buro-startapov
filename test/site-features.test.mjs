@@ -214,6 +214,7 @@ test('background wave caches its unchanged geometry and gradients and pauses off
   assert.match(motion,/sample\.sinU \* phaseCos \+ sample\.cosU \* phaseSin/);
   assert.match(motion,/window\.addEventListener\('scroll',[\s\S]*?\{ passive:true \}/);
   assert.match(motion,/setTimeout\(resumeWave, 180\)/);
+  assert.match(motion,/if \(reduced && width\)[\s\S]*?frame = requestAnimationFrame\(draw\)/);
 });
 
 test('site logo and favicon use the bird mark', async () => {
