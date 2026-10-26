@@ -191,10 +191,10 @@ test('leaderboard panel is transparent and email confirmation uses the on-site c
   assert.match(db,/body\.action === 'firebase-email-start'/); assert.match(db,/body\.action === 'firebase-email-finish'/); assert.match(db,/purpose: 'email'/); assert.match(db,/firebase-verify/); assert.match(db,/COALESCE\(email_verified_at,now\(\)\)/);
 });
 
-test('site uses the supplied periwinkle palette and renders one animated ocean sheet instead of route lines', async () => {
+test('site uses the supplied periwinkle palette and renders one animated sheet divided into flow lines', async () => {
   const motion=await readFile(path.join(root,'site-motion.js'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8'),settingsCss=await readFile(path.join(root,'site-settings.css'),'utf8');
   assert.match(settings,/dataset\.siteTheme = 'dark'/); assert.match(motion,/halfDepth = height \* \.25675/); assert.match(motion,/surfaceGradient\.addColorStop/); assert.match(motion,/ctx\.fill\(\)/); assert.match(motion,/requestAnimationFrame\(draw\)/); assert.doesNotMatch(motion,/route-branch|route-wave-purple/);
-  assert.match(css,/--brand-bg:#09090F/); assert.match(css,/body\{background:#09090F!important;color:#FFFFFF!important\}/); assert.match(motion,/ctx\.closePath\(\)/); assert.doesNotMatch(motion,/length:80|ctx\.stroke\(\)/); assert.match(css,/--brand-surface:#4F4F66/); assert.match(css,/--brand-text:#FFFFFF/); assert.match(css,/--brand-muted:#C4C3D7/); assert.match(css,/project-detail-score\{background:transparent!important/); assert.match(css,/body main :is\(h1,h2,h3,h4,p,label,small,span,b,strong,li,td,th,legend,summary,dt,dd,figcaption\)/); assert.match(css,/\.leader-row\{padding-block:24px!important;background:transparent!important\}/); assert.match(css,/\.showcase-stage\{border:0!important;box-shadow:none!important;background:transparent!important\}/); assert.match(css,/investor-empty-cta,html\[data-site-theme="dark"\] \.investor-row\{background:transparent!important/); assert.match(css,/\.ocean-wave-canvas/); assert.match(css,/\.academy-route-art\{display:none!important\}/); assert.match(settingsCss,/site-preferences-panel,html\[data-site-theme="dark"\] \.site-preferences-panel select/); assert.match(settingsCss,/html\[data-site-theme="dark"\] \.ai-result\{background:#35354D/);
+  assert.match(css,/--brand-bg:#09090F/); assert.match(css,/body\{background:#09090F!important;color:#FFFFFF!important\}/); assert.match(motion,/ctx\.closePath\(\)/); assert.match(motion,/ctx\.clip\(\)/); assert.match(motion,/for \(let stripe = 0; stripe < 80; stripe\+\+\)/); assert.match(motion,/stripeGradient\.addColorStop/); assert.match(css,/--brand-surface:#4F4F66/); assert.match(css,/--brand-text:#FFFFFF/); assert.match(css,/--brand-muted:#C4C3D7/); assert.match(css,/project-detail-score\{background:transparent!important/); assert.match(css,/body main :is\(h1,h2,h3,h4,p,label,small,span,b,strong,li,td,th,legend,summary,dt,dd,figcaption\)/); assert.match(css,/\.leader-row\{padding-block:24px!important;background:transparent!important\}/); assert.match(css,/\.showcase-stage\{border:0!important;box-shadow:none!important;background:transparent!important\}/); assert.match(css,/investor-empty-cta,html\[data-site-theme="dark"\] \.investor-row\{background:transparent!important/); assert.match(css,/\.ocean-wave-canvas/); assert.match(css,/\.academy-route-art\{display:none!important\}/); assert.match(settingsCss,/site-preferences-panel,html\[data-site-theme="dark"\] \.site-preferences-panel select/); assert.match(settingsCss,/html\[data-site-theme="dark"\] \.ai-result\{background:#35354D/);
 });
 
 test('ocean canvas respects reduced-motion and keeps the old route network hidden', async () => {
@@ -208,7 +208,9 @@ test('background wave caches unchanged geometry and gradients while remaining an
   assert.match(motion,/x <= width; x \+= 3/);
   assert.match(motion,/\.755 - \.065 \* u - \.22 \* centralRise - \.065 \* leftRise \+ \.028 \* trough - \.055 \* rightRise/);
   assert.match(motion,/surfaceGradient\.addColorStop\(\.70, 'rgba\(130,129,204,\.23\)'\)/);
-  assert.doesNotMatch(motion,/lanes|for \(let lane/);
+  assert.match(motion,/stripeGradient\.addColorStop\(\.70, 'rgba\(130,129,204,\.40\)'\)/);
+  assert.match(motion,/ctx\.clip\(\)/);
+  assert.match(motion,/for \(let stripe = 0; stripe < 80; stripe\+\+\)/);
   assert.match(motion,/cancelAnimationFrame\(frame\)/);
   assert.match(motion,/if \(!reduced && !document\.hidden\) frame = requestAnimationFrame\(draw\)/);
   assert.match(motion,/sample\.sinU \* phaseCos \+ sample\.cosU \* phaseSin/);

@@ -6,7 +6,7 @@
   document.body.prepend(canvas);
   const ctx = canvas.getContext('2d', { alpha: true });
   let width = 0, height = 0, ratio = 1;
-  let samples = [], surfaceGradient, frame = 0;
+  let samples = [], surfaceGradient, stripeGradient, frame = 0;
   const buildWaveCache = () => {
     samples = [];
     for (let x = 0; x <= width; x += 3) {
@@ -24,6 +24,12 @@
     surfaceGradient.addColorStop(.48, 'rgba(127,127,153,.16)');
     surfaceGradient.addColorStop(.70, 'rgba(130,129,204,.23)');
     surfaceGradient.addColorStop(1, 'rgba(112,109,255,.09)');
+    stripeGradient = ctx.createLinearGradient(0, 0, width, 0);
+    stripeGradient.addColorStop(0, 'rgba(112,109,255,.20)');
+    stripeGradient.addColorStop(.22, 'rgba(130,129,204,.38)');
+    stripeGradient.addColorStop(.48, 'rgba(127,127,153,.31)');
+    stripeGradient.addColorStop(.70, 'rgba(130,129,204,.40)');
+    stripeGradient.addColorStop(1, 'rgba(112,109,255,.20)');
   };
   const resize = () => {
     width = window.innerWidth; height = window.innerHeight;
@@ -63,6 +69,27 @@
     ctx.shadowColor = 'rgba(112,109,255,.28)';
     ctx.shadowBlur = 26;
     ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(130,129,204,.24)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.save();
+    ctx.clip();
+    ctx.strokeStyle = stripeGradient;
+    for (let stripe = 0; stripe < 80; stripe++) {
+      const offset = ((stripe / 79) * 2 - 1) * halfDepth;
+      ctx.beginPath();
+      for (let i = 0; i < samples.length; i++) {
+        const sample = samples[i];
+        const drift = (sample.sinU * phaseCos + sample.cosU * phaseSin) * height * .02;
+        const y = sample.baseY + drift + offset;
+        if (i === 0) ctx.moveTo(sample.x, y); else ctx.lineTo(sample.x, y);
+      }
+      ctx.globalAlpha = stripe % 8 === 0 ? .78 : .48;
+      ctx.lineWidth = stripe % 8 === 0 ? 1.15 : .8;
+      ctx.stroke();
+    }
+    ctx.restore();
     ctx.shadowBlur = 0; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     if (!reduced && !document.hidden) frame = requestAnimationFrame(draw);
   };
