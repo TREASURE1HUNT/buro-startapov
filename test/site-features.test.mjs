@@ -36,6 +36,18 @@ test('every public page applies the dark palette before stylesheets to prevent c
   }
 });
 
+test('public pages defer scripts and Render compresses and caches static assets', async () => {
+  const pages=['index.html','projects.html','leaderboard.html','method.html','investors.html','create.html','profile.html','project.html','login.html','register.html'];
+  for(const page of pages){
+    const html=await readFile(path.join(root,page),'utf8');
+    assert.doesNotMatch(html,/<script(?![^>]*\bdefer\b)(?=[^>]*\bsrc=)/,`${page} avoids parser-blocking scripts`);
+  }
+  const server=await readFile(path.join(root,'render-server.mjs'),'utf8');
+  assert.match(server,/gzipSync\(content\)/);
+  assert.match(server,/stale-while-revalidate=86400/);
+  assert.match(server,/max-age=31536000, immutable/);
+});
+
 test('startup upload accepts larger promo clips while enforcing 8 MB per video and 10 MB total', async () => {
   const upload=await readFile(path.join(root,'site-enhancements.js'),'utf8'), detail=await readFile(path.join(root,'project-page.js'),'utf8');
   assert.match(upload,/file\.size>8\*1024\*1024/); assert.match(upload,/existingBytes\+addedBytes>10\*1024\*1024/); assert.match(upload,/localStorage\.setItem\('buro-startapov-projects-v1'.*catch\{\}location\.href/);

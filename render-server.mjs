@@ -2,6 +2,7 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { gzipSync } from 'node:zlib';
 import handler from './.netlify/functions/database.mjs';
 import evaluateHandler from './.netlify/functions/evaluate.mjs';
 import supportHandler from './.netlify/functions/support.mjs';
@@ -105,8 +106,22 @@ const server = http.createServer(async (req, res) => {
         const file = path.resolve(root, relative);
         if (!file.startsWith(root + path.sep) || relative.split(/[\\/]/).some(part => part.startsWith('.'))) { res.writeHead(403); return res.end('Forbidden'); }
         const content = await readFile(file);
-        res.writeHead(200, { 'content-type': mimeTypes[path.extname(file).toLowerCase()] || 'application/octet-stream', 'x-content-type-options': 'nosniff' });
-        return req.method === 'HEAD' ? res.end() : res.end(content);
+        const extension = path.extname(file).toLowerCase();
+        const headers = {
+          'content-type': mimeTypes[extension] || 'application/octet-stream',
+          'x-content-type-options': 'nosniff',
+          'cache-control': extension === '.html'
+            ? 'no-cache'
+            : url.searchParams.has('v')
+              ? 'public, max-age=31536000, immutable'
+              : 'public, max-age=3600, stale-while-revalidate=86400',
+        };
+        const compressible = /^(\.html|\.css|\.js|\.json|\.svg)$/.test(extension);
+        const acceptsGzip = /(?:^|,)\s*gzip\s*(?:,|$)/i.test(req.headers['accept-encoding'] || '');
+        const body = compressible && acceptsGzip && content.length > 1024 ? gzipSync(content) : content;
+        if (body !== content) { headers['content-encoding'] = 'gzip'; headers.vary = 'Accept-Encoding'; }
+        res.writeHead(200, headers);
+        return req.method === 'HEAD' ? res.end() : res.end(body);
       } catch { res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }); return res.end('Not Found'); }
     }
   }
