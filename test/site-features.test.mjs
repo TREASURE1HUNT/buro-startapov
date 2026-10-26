@@ -207,6 +207,20 @@ test('site logo and favicon use the bird mark', async () => {
   assert.match(index,/svg class="brand-mark" viewBox="0 0 40 28"/); assert.doesNotMatch(index,/class="brand-mark"><i>/); assert.match(favicon,/<svg[^>]*viewBox="0 0 40 28"/); assert.match(favicon,/#706DFF/);
 });
 
+test('site defers offscreen media and browser font loading without delaying the hero', async () => {
+  const settings = await readFile(path.join(root,'site-settings.js'),'utf8');
+  const css = await readFile(path.join(root,'enhancements.css'),'utf8');
+  const htmlFiles = (await import('node:fs/promises')).readdir(root);
+  assert.match(settings,/image\.loading = rect\.top < innerHeight \* 1\.5 \? 'eager' : 'lazy'/);
+  assert.match(settings,/image\.decoding = 'async'/);
+  assert.match(settings,/new MutationObserver/);
+  assert.match(css,/content-visibility: auto/);
+  for (const file of (await htmlFiles).filter(name => name.endsWith('.html'))) {
+    const page = await readFile(path.join(root,file),'utf8');
+    assert.match(page,/fonts\.googleapis\.com\/css2\?[^"']*display=swap/,`${file} should use non-blocking font display`);
+  }
+});
+
 test('personal library filters by current owner and favorites are saved and exposed in the profile', async () => {
   const lib=await readFile(path.join(root,'project-library.js'),'utf8'),catalog=await readFile(path.join(root,'project-catalog.js'),'utf8'),profile=await readFile(path.join(root,'account-settings.js'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8');
   assert.match(lib,/ownerEmail \|\| ''\)\.toLowerCase\(\) === String\(sessionUser\.email/);assert.match(catalog,/buro-favorite-projects-v1/);assert.match(catalog,/data-favorite-id/);assert.match(profile,/favorite-startups-panel/);assert.match(profile,/account-tab-favorites/);assert.match(settings,/aria-hidden="true">文<\/span><\/button><section/);assert.doesNotMatch(settings,/site-preferences-caption|<b>Язык/);

@@ -384,3 +384,8 @@ html[data-site-theme="dark"] svg.brand-mark{width:30px;height:28px;display:block
 html[data-site-theme="dark"]{background:#09090F!important}html[data-site-theme="dark"] body{background:#09090F!important;color:#FFFFFF!important}html[data-site-theme="dark"] body:before{background:radial-gradient(ellipse at 74% 57%,#1D1D3330,transparent 47%)!important}
 html[data-site-theme="dark"] .topbar{background:rgba(8,8,14,.94)!important}
 .ocean-wave-canvas{opacity:1!important;mix-blend-mode:screen!important;mask-image:linear-gradient(to bottom,transparent 0%,#000 4%,#000 97%,transparent 100%)!important}
+
+/* Low-risk rendering optimization: skip painting below-the-fold sections until needed. */
+@supports (content-visibility: auto) {
+  main > section:not(:first-child), .footer { content-visibility: auto; contain-intrinsic-size: auto 640px; }
+}

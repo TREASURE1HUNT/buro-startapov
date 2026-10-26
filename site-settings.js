@@ -32,6 +32,20 @@
     else fetch('/api/analytics',{method:'POST',headers:{'content-type':'application/json'},body:data,keepalive:true}).catch(()=>{});
   }
   document.documentElement.lang = preferences.language; document.documentElement.dataset.siteLanguage = preferences.language;
+  // Keep below-the-fold media from competing with the first screen for bandwidth.
+  // Images near the viewport stay eager to avoid delaying the visible hero.
+  const prepareImage = image => {
+    if (!(image instanceof HTMLImageElement)) return;
+    const rect = image.getBoundingClientRect();
+    image.loading = rect.top < innerHeight * 1.5 ? 'eager' : 'lazy';
+    image.decoding = 'async';
+  };
+  document.querySelectorAll('img').forEach(prepareImage);
+  new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(node => {
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    if (node.matches('img')) prepareImage(node);
+    node.querySelectorAll?.('img').forEach(prepareImage);
+  }))).observe(document.documentElement, { childList:true, subtree:true });
   theme();
   const topbar = document.querySelector('.topbar');
   let header = document.querySelector('.header-actions');
