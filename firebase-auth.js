@@ -92,18 +92,9 @@ if (register) register.addEventListener('submit', async event => {
   const name = register.elements.fullName.value.trim(), email = register.elements.email.value.trim().toLowerCase();
   const password = register.elements.password.value, role = register.elements.role.value;
   if (password !== register.elements.passwordConfirm.value) { show(result, 'Пароли не совпадают — проверьте оба поля.', 'error'); register.elements.passwordConfirm.focus(); return; }
-  if (register.dataset.legacyPending) {
-    try {
-      const action = register.dataset.legacyPending === 'firebase-verify' ? 'firebase-email-finish' : 'verify-email';
-      const data = await call({ action, email: register.elements.email.value.trim().toLowerCase(), code: register.elements.verificationCode.value.trim() });
-      cacheState(data); show(result, 'Почта подтверждена. Открываю профиль…'); setTimeout(() => { location.href = 'profile.html'; }, 250);
-    } catch (error) { show(result, errorMessage(error), 'error'); }
-    return;
-  }
   try {
     const challenge = await call({ action: 'register', name, email, password, role, investorFocus: register.elements.investorFocus?.value.trim() || '', ticketSize: register.elements.ticketSize?.value.trim() || '' });
-    legacyCodeStep(register, result, challenge);
-    register.dataset.awaitingEmailVerification = 'true';
+    cacheState(challenge); show(result, 'Аккаунт создан. Открываю профиль…'); setTimeout(() => { location.href = 'profile.html'; }, 250);
   } catch (error) { show(result, errorMessage(error), 'error'); }
 }, true);
 
@@ -111,14 +102,6 @@ const login = document.querySelector('#login-form');
 if (login) login.addEventListener('submit', async event => {
   event.preventDefault(); event.stopImmediatePropagation();
   const result = document.querySelector('#login-result');
-  if (login.dataset.legacyPending) {
-    try {
-      const action = login.dataset.legacyPending === 'firebase-verify' ? 'firebase-email-finish' : login.dataset.legacyPending === 'register' ? 'verify-email' : 'verify-login';
-      const data = await call({ action, email: login.elements.email.value.trim().toLowerCase(), code: login.elements.verificationCode.value.trim() });
-      cacheState(data); show(result, login.dataset.legacyPending === 'firebase-verify' ? 'Почта подтверждена. Вход выполнен…' : 'Подтверждение выполнено. Открываю профиль…'); setTimeout(() => { location.href = redirectAfterLogin(); }, 250);
-    } catch (error) { show(result, error.message, 'error'); }
-    return;
-  }
   if (!login.reportValidity()) return;
   const email = login.elements.email.value.trim().toLowerCase(), password = login.elements.password.value;
   try {
@@ -140,20 +123,7 @@ if (login) login.addEventListener('submit', async event => {
       }
       throw error;
     }
-    if (data.verificationRequired && data.purpose === 'email') {
-      const challenge = await call({ action: 'firebase-email-start', idToken: await credential.user.getIdToken(true), email });
-      await signOut(auth);
-      if (challenge.alreadyVerified) { show(result, 'Почта подтверждена. Повторите вход.'); return; }
-      legacyCodeStep(login, result, challenge); return;
-    }
-    if (data.verificationRequired && data.purpose === 'device-link') {
-      const pendingDeviceId = deviceId();
-      const settings = { url: `${location.origin}/login.html?device=1&did=${encodeURIComponent(pendingDeviceId)}&email=${encodeURIComponent(email)}`, handleCodeInApp: true };
-      await sendSignInLinkToEmail(auth, email, settings);
-      localStorage.setItem('buro-firebase-device-link', JSON.stringify({ email, next: redirectAfterLogin(), deviceId: pendingDeviceId }));
-      await signOut(auth);
-      show(result, `Ссылка для подтверждения нового устройства отправлена на ${email}. Откройте её из письма, чтобы завершить вход.`); return;
-    }
+    if (data.verificationRequired) throw new Error('Сеанс аккаунта устарел. Зарегистрируйтесь заново.');
     cacheState(data); show(result, 'Вход выполнен. Открываю профиль…');
     setTimeout(() => { location.href = redirectAfterLogin(); }, 250);
   } catch (error) { show(result, errorMessage(error), 'error'); }

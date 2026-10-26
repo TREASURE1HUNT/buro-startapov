@@ -159,20 +159,14 @@ test('evaluations are attached to the saved public project document and its deta
   assert.match(details,/root\.dataset\.aiEvaluation/);
 });
 
-test('Firebase auth confirms email with a site code and requires a Firebase email link on untrusted devices', async () => {
+test('account signup and login work without email delivery or verification', async () => {
   const auth=await readFile(path.join(root,'firebase-auth.js'),'utf8');
   const db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8');
-  const migration=await readFile(path.join(root,'netlify/database/migrations/0004_email_auth/migration.sql'),'utf8');
-  const firebaseMigration=await readFile(path.join(root,'netlify/database/migrations/0006_firebase_auth/migration.sql'),'utf8');
-  const settings=await readFile(path.join(root,'account-settings.js'),'utf8');
-  const login=await readFile(path.join(root,'login.html'),'utf8');
-  const register=await readFile(path.join(root,'register.html'),'utf8');
-  const renderServer=await readFile(path.join(root,'render-server.mjs'),'utf8');
-  assert.doesNotMatch(auth,/sendEmailVerification/); assert.match(auth,/action: 'register'/); assert.match(auth,/verify-email/); assert.doesNotMatch(auth,/createUserWithEmailAndPassword/); assert.match(auth,/firebase-email-start/); assert.match(auth,/firebase-email-finish/); assert.match(auth,/sendSignInLinkToEmail/); assert.match(auth,/signInWithEmailLink/); assert.match(auth,/confirmedDeviceId/);
-  assert.match(db,/accounts:lookup/); assert.match(db,/firebase-device-finish/); assert.match(db,/app_trusted_devices/);
-  assert.match(migration,/app_auth_challenges/); assert.match(migration,/email_verified_at/); assert.match(firebaseMigration,/firebase_uid TEXT/);
-  assert.match(renderServer,/0006_firebase_auth/); assert.match(register,/type="module" src="firebase-auth\.js(?:\?[^\"]+)?"/);
-  assert.match(settings,/account-avatar-trigger/); assert.match(login,/href="register\.html"[^>]*>Нет аккаунта\?/);
+  assert.match(auth,/cacheState\(challenge\); show\(result, 'Аккаунт создан/);
+  assert.doesNotMatch(auth,/legacyCodeStep\(register|firebase-email-start/);
+  assert.match(db,/INSERT INTO app_accounts\(email,name,role,password_hash,password_salt,password_scheme,profile,email_verified_at\)/);
+  assert.match(db,/await trustDevice\(email,deviceHash,deviceLabel\)/);
+  assert.doesNotMatch(db,/await createAuthChallenge\(email,'register'/);
 });
 
 test('startup media ordering rerenders cards and README markdown uses a sanitizer', async () => {
@@ -220,13 +214,14 @@ test('project workspace library and history remain wired with the animated lumin
   assert.match(create,/data-workspace-tab="library"/);assert.match(create,/data-workspace-tab="history"/);assert.match(create,/data-workspace-tab="create"/);assert.match(lib,/api\/database\?action=projects/);assert.match(lib,/delete-project/);assert.match(lib,/buro-project-history-v1/);assert.match(index,/Создать проект/);assert.match(motion,/anime\?\.animate/);assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/halfDepth = height \* \.25675/);assert.match(motion,/ctx\.fill\(\)/);assert.match(css,/\.ocean-wave-canvas/);assert.match(css,/--brand-bg:#09090F/); assert.match(css,/body\{background:#09090F!important;color:#FFFFFF!important\}/);assert.doesNotMatch(create,/value="#b8f548"/);
 });
 
-test('leaderboard panel is transparent and email confirmation uses the on-site code flow', async () => {
-  const css=await readFile(path.join(root,'enhancements.css'),'utf8'),auth=await readFile(path.join(root,'firebase-auth.js'),'utf8'),db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8'),motion=await readFile(path.join(root,'site-motion.js'),'utf8');
+test('leaderboard panel remains transparent and email verification is disabled', async () => {
+  const css=await readFile(path.join(root,'enhancements.css'),'utf8');
+  const auth=await readFile(path.join(root,'firebase-auth.js'),'utf8');
+  const db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8');
   assert.match(css,/\.leader-panel\{background:transparent!important;border-color:transparent!important/);
-  assert.doesNotMatch(css,/filter:grayscale\(1\)!important/); assert.match(css,/--brand-teal:#706DFF!important/); assert.match(css,/--brand-violet:#8281CC!important/); assert.match(css,/--brand-surface:#4F4F66!important/); assert.match(css,/--brand-muted:#C4C3D7!important/); assert.match(motion,/halfDepth = height \* \.25675/);
-  assert.match(auth,/action: 'register'/); assert.match(auth,/verify-email/); assert.doesNotMatch(auth,/createUserWithEmailAndPassword/);
-  assert.match(auth,/action: 'firebase-email-start'/); assert.match(auth,/firebase-email-finish/); assert.doesNotMatch(auth,/sendEmailVerification/);
-  assert.match(db,/body\.action === 'firebase-email-start'/); assert.match(db,/body\.action === 'firebase-email-finish'/); assert.match(db,/purpose: 'email'/); assert.match(db,/firebase-verify/); assert.match(db,/COALESCE\(email_verified_at,now\(\)\)/);
+  assert.match(auth,/cacheState\(challenge\); show\(result, 'Аккаунт создан/);
+  assert.match(db,/Подтверждение по почте отключено/);
+  assert.match(db,/email_verified_at\) VALUES\(\$\{email\}.*now\(\)/);
 });
 
 test('site uses the supplied periwinkle palette and renders one animated sheet divided into flow lines', async () => {

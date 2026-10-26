@@ -135,7 +135,7 @@ export default async function handler(req) {
     if (body.action === 'firebase-register') {
       const identity = await firebaseIdentity(body.idToken);
       if (identity.error) return reply({ error: identity.error }, identity.error.includes('ещё не подключён') ? 503 : 401);
-      if (identity.email !== emailOf(body.email) || identity.emailVerified) return reply({ error: 'Состояние email в Firebase изменилось. Повторите регистрацию.' }, 400);
+      if (identity.email !== emailOf(body.email)) return reply({ error: 'Состояние аккаунта в Firebase изменилось. Повторите регистрацию.' }, 400);
       const name = String(body.name || '').trim(), role = String(body.role || '');
       if (!name || name.length > 100 || !['startup', 'investor', 'mentor'].includes(role)) return reply({ error: 'Проверьте имя и выбранную роль.' }, 400);
       const profile = { investorFocus: String(body.investorFocus || '').slice(0, 160), ticketSize: String(body.ticketSize || '').slice(0, 100) };
@@ -145,7 +145,7 @@ export default async function handler(req) {
         await db.sql`UPDATE app_accounts SET firebase_uid=${identity.uid},updated_at=now() WHERE email=${identity.email} AND firebase_uid IS NULL`;
         return reply({ ok: true, email: identity.email, linkedExistingAccount: true }, 200);
       }
-      const rows = await db.sql`INSERT INTO app_accounts(email,name,role,password_hash,password_salt,password_scheme,profile,firebase_uid,email_verified_at) VALUES(${identity.email},${name},${role},'','', 'firebase',${JSON.stringify(profile)}::jsonb,${identity.uid},NULL) ON CONFLICT(email) DO UPDATE SET name=EXCLUDED.name,role=EXCLUDED.role,profile=EXCLUDED.profile,firebase_uid=EXCLUDED.firebase_uid,updated_at=now() WHERE app_accounts.firebase_uid=EXCLUDED.firebase_uid AND app_accounts.email_verified_at IS NULL RETURNING email`;
+      const rows = await db.sql`INSERT INTO app_accounts(email,name,role,password_hash,password_salt,password_scheme,profile,firebase_uid,email_verified_at) VALUES(${identity.email},${name},${role},'','', 'firebase',${JSON.stringify(profile)}::jsonb,${identity.uid},now()) ON CONFLICT(email) DO UPDATE SET name=EXCLUDED.name,role=EXCLUDED.role,profile=EXCLUDED.profile,firebase_uid=EXCLUDED.firebase_uid,email_verified_at=COALESCE(app_accounts.email_verified_at,now()),updated_at=now() WHERE app_accounts.firebase_uid=EXCLUDED.firebase_uid RETURNING email`;
       if (!rows.length) return reply({ error: 'Не удалось создать Firebase-профиль. Попробуйте войти в существующий аккаунт.' }, 409);
       return reply({ ok: true, email: identity.email }, 201);
     }
@@ -156,26 +156,11 @@ export default async function handler(req) {
       const rows = await db.sql`SELECT firebase_uid,email_verified_at FROM app_accounts WHERE email=${identity.email} LIMIT 1`;
       const account = rows[0];
       if (!account || account.firebase_uid !== identity.uid) return reply({ error: 'Профиль для этого email не найден.' }, 404);
-      if (account.email_verified_at) return reply({ alreadyVerified: true, email: identity.email });
-      const deviceHash = hash(`device:${body.deviceId}`), deviceLabel = String(body.deviceLabel || 'Browser').slice(0, 80);
-      const challenge = await createAuthChallenge(identity.email, 'firebase-verify', { firebaseUid: identity.uid, deviceLabel }, deviceHash, deviceLabel);
-      return challenge.ok ? reply({ verificationRequired: true, purpose: 'firebase-verify', email: identity.email, message: `Код подтверждения отправлен на ${identity.email}.` }, 202) : reply({ error: challenge.error }, challenge.status);
+      if (!account.email_verified_at) await db.sql`UPDATE app_accounts SET email_verified_at=now(),updated_at=now() WHERE email=${identity.email}`;
+      return reply({ ok: true, email: identity.email });
     }
     if (body.action === 'firebase-email-finish') {
-      const email = emailOf(body.email);
-      if (!email || !validDeviceId(body.deviceId)) return reply({ error: 'Обновите страницу и запросите новый код.' }, 400);
-      const verified = await verifyAuthChallenge(email, 'firebase-verify', body.code);
-      if (!verified.ok) return reply({ error: verified.error }, 400);
-      const { challenge } = verified, deviceHash = hash(`device:${body.deviceId}`);
-      if (challenge.device_hash !== deviceHash) return reply({ error: 'Код отправлен для другого устройства. Запросите новый код в этом браузере.' }, 403);
-      const uid = String(challenge.payload?.firebaseUid || '');
-      if (!uid) return reply({ error: 'Запрос подтверждения устарел. Запросите новый код.' }, 400);
-      const account = await db.sql`UPDATE app_accounts SET email_verified_at=COALESCE(email_verified_at,now()),updated_at=now() WHERE email=${email} AND firebase_uid=${uid} RETURNING email`;
-      if (!account.length) return reply({ error: 'Аккаунт не найден. Войдите и запросите новый код.' }, 404);
-      await trustDevice(email, deviceHash, String(challenge.payload?.deviceLabel || body.deviceLabel || 'Browser').slice(0, 80));
-      await db.sql`DELETE FROM app_auth_challenges WHERE email=${email} AND purpose='firebase-verify'`;
-      await db.sql`INSERT INTO app_analytics(event_name,route) VALUES('signup','/register') ON CONFLICT DO NOTHING`;
-      return reply(await stateFor(email), 200, { 'set-cookie': await setSession(email) });
+      return reply({ error: 'Перезагрузите страницу и войдите снова.' }, 400);
     }
     if (body.action === 'firebase-session') {
       const identity = await firebaseIdentity(body.idToken);
@@ -184,8 +169,7 @@ export default async function handler(req) {
       const rows = await db.sql`SELECT email,name,role,profile,created_at,email_verified_at,firebase_uid FROM app_accounts WHERE email=${identity.email} LIMIT 1`;
       const user = rows[0];
       if (!user || user.firebase_uid !== identity.uid) return reply({ error: 'Профиль не найден. Завершите регистрацию через Firebase.' }, 404);
-      if (!identity.emailVerified && !user.email_verified_at) return reply({ verificationRequired: true, purpose: 'email', email: identity.email, message: 'Подтвердите адрес почты кодом из письма.' }, 202);
-      if (identity.emailVerified && !user.email_verified_at) {
+      if (!user.email_verified_at) {
         await db.sql`UPDATE app_accounts SET email_verified_at=now(),updated_at=now() WHERE email=${identity.email}`;
         await db.sql`INSERT INTO app_analytics(event_name,route) VALUES('signup','/register')`;
       }
@@ -222,47 +206,24 @@ export default async function handler(req) {
       const profile=body.profile&&typeof body.profile==='object'?body.profile:{investorFocus:String(body.investorFocus||''),ticketSize:String(body.ticketSize||'')};
       const payload={name,role,passwordHash,passwordSalt:salt,profile,records:body.records||{},projects:Array.isArray(body.projects)?body.projects:[]};
       const deviceHash=hash(`device:${body.deviceId}`),deviceLabel=String(body.deviceLabel||'Browser').slice(0,80);
-      const challenge=await createAuthChallenge(email,'register',payload,deviceHash,deviceLabel);
-      return challenge.ok?reply({verificationRequired:true,purpose:'register',email,message:'Код подтверждения отправлен на почту. Введите его, чтобы завершить регистрацию.'},202):reply({error:challenge.error},challenge.status);
+      const created=await db.sql`INSERT INTO app_accounts(email,name,role,password_hash,password_salt,password_scheme,profile,email_verified_at) VALUES(${email},${name},${role},${passwordHash},${salt},'scrypt',${JSON.stringify(profile)}::jsonb,now()) ON CONFLICT DO NOTHING RETURNING email,name,role,profile,created_at,email_verified_at`;
+      if(!created[0])return reply({error:'Аккаунт с таким email уже существует.'},409);
+      await importState(email,payload.records,payload.projects);
+      await trustDevice(email,deviceHash,deviceLabel);
+      await db.sql`INSERT INTO app_analytics(event_name,route) VALUES('signup','/register')`;
+      return reply(await stateFor(email),201,{'set-cookie':await setSession(email)});
     }
     if(body.action==='login') {
       const email=emailOf(body.email); const rows=await db.sql`SELECT email,name,role,profile,created_at,email_verified_at,password_hash,password_salt,password_scheme FROM app_accounts WHERE email=${email} LIMIT 1`; const user=rows[0];
       if(!user||typeof body.password!=='string')return reply({error:'Неверный email или пароль.'},401);
       const expected=Buffer.from(user.password_hash,'hex'),actual=user.password_scheme==='pbkdf2'?pbkdf2Sync(body.password,Buffer.from(user.password_salt,'hex'),120000,32,'sha256'):scryptSync(body.password,user.password_salt,64);
       if(expected.length!==actual.length||!timingSafeEqual(expected,actual))return reply({error:'Неверный email или пароль.'},401);
-      if (!user.email_verified_at) return reply({error:'Этот адрес ещё не подтверждён. Завершите подтверждение регистрации.'},403);
       if (!validDeviceId(body.deviceId)) return reply({error:'Обновите страницу и повторите вход.'},400);
       const deviceHash=hash(`device:${body.deviceId}`),deviceLabel=String(body.deviceLabel||'Browser').slice(0,80);
-      const trusted=await db.sql`SELECT 1 FROM app_trusted_devices WHERE email=${email} AND device_hash=${deviceHash} LIMIT 1`;
-      if (!trusted.length) {
-        const challenge=await createAuthChallenge(email,'login',{},deviceHash,deviceLabel);
-        return challenge.ok?reply({verificationRequired:true,purpose:'login',email,message:'На почту отправлен код для подтверждения нового устройства.'},202):reply({error:challenge.error},challenge.status);
-      }
       await trustDevice(email,deviceHash,deviceLabel);
       return reply(await stateFor(email),200,{'set-cookie':await setSession(email)});
     }
-    if(body.action==='verify-email'||body.action==='verify-login') {
-      const email=emailOf(body.email),purpose=body.action==='verify-email'?'register':'login';
-      const verified=await verifyAuthChallenge(email,purpose,body.code);
-      if(!verified.ok)return reply({error:verified.error},400);
-      const {challenge}=verified;
-      if(purpose==='register') {
-        const saved=challenge.payload||{};
-        const rows=await db.sql`INSERT INTO app_accounts(email,name,role,password_hash,password_salt,password_scheme,profile,email_verified_at) VALUES(${email},${String(saved.name||'')},${String(saved.role||'')},${String(saved.passwordHash||'')},${String(saved.passwordSalt||'')},${String(saved.passwordScheme||'scrypt')},${JSON.stringify(saved.profile||{})}::jsonb,now()) ON CONFLICT DO NOTHING RETURNING email,name,role,profile,created_at,email_verified_at`;
-        if(!rows[0])return reply({error:'Аккаунт с таким email уже существует.'},409);
-        await importState(email,saved.records,saved.projects);
-        await db.sql`INSERT INTO app_analytics(event_name,route) VALUES('signup','/register')`;
-      }
-      await trustDevice(email,challenge.device_hash,String(body.deviceLabel||'Browser').slice(0,80));
-      await db.sql`DELETE FROM app_auth_challenges WHERE email=${email} AND purpose=${purpose}`;
-      return reply(await stateFor(email),200,{'set-cookie':await setSession(email)});
-    }
-    if(body.action==='resend-code') {
-      const email=emailOf(body.email),rows=await db.sql`SELECT purpose,payload,device_hash FROM app_auth_challenges WHERE email=${email} LIMIT 1`,pending=rows[0];
-      if(!pending)return reply({error:'Активный запрос подтверждения не найден. Повторите вход или регистрацию.'},404);
-      const challenge=await createAuthChallenge(email,pending.purpose,pending.payload,pending.device_hash,String(body.deviceLabel||'Browser').slice(0,80));
-      return challenge.ok?reply({ok:true,message:'Новый код отправлен на вашу почту.'},202):reply({error:challenge.error},challenge.status);
-    }
+    if(body.action==='verify-email'||body.action==='verify-login'||body.action==='resend-code'||body.action==='firebase-email-start'||body.action==='firebase-email-finish')return reply({error:'Подтверждение по почте отключено. Войдите снова.'},410);
     if(body.action==='logout') { const token=cookie(req); if(token)await db.sql`DELETE FROM app_sessions WHERE token_hash=${hash(token)}`; return reply({ok:true},200,{'set-cookie':'buro_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0'}); }
 
     if(body.action==='migrate-legacy') {
@@ -272,8 +233,12 @@ export default async function handler(req) {
       if (!validDeviceId(body.deviceId)) return reply({error:'Обновите страницу и повторите вход.'},400);
       const existing=await db.sql`SELECT email FROM app_accounts WHERE email=${email} LIMIT 1`;if(existing.length)return reply({error:'Аккаунт уже есть в базе — выполните вход.'},409);
       const payload={name,role,passwordHash,passwordSalt:salt,passwordScheme:'pbkdf2',profile,records:body.records||{},projects:Array.isArray(body.projects)?body.projects:[]};
-      const challenge=await createAuthChallenge(email,'register',payload,hash(`device:${body.deviceId}`),String(body.deviceLabel||'Browser').slice(0,80));
-      return challenge.ok?reply({verificationRequired:true,purpose:'register',email,message:'Код подтверждения отправлен на почту. Введите его, чтобы перенести аккаунт.'},202):reply({error:challenge.error},challenge.status);
+      const rows=await db.sql`INSERT INTO app_accounts(email,name,role,password_hash,password_salt,password_scheme,profile,email_verified_at) VALUES(${email},${name},${role},${passwordHash},${salt},'pbkdf2',${JSON.stringify(profile)}::jsonb,now()) ON CONFLICT DO NOTHING RETURNING email,name,role,profile,created_at,email_verified_at`;
+      if(!rows[0])return reply({error:'Аккаунт уже есть в базе — выполните вход.'},409);
+      await importState(email,payload.records,payload.projects);
+      await trustDevice(email,hash(`device:${body.deviceId}`),String(body.deviceLabel||'Browser').slice(0,80));
+      await db.sql`INSERT INTO app_analytics(event_name,route) VALUES('signup','/register')`;
+      return reply(await stateFor(email),201,{'set-cookie':await setSession(email)});
     }
 
     const who=await session(req); if(!who)return reply({error:'Войдите в аккаунт, чтобы сохранить данные.'},401);
