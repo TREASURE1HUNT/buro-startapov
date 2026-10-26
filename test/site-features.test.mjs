@@ -202,7 +202,7 @@ test('ocean canvas respects reduced-motion and keeps the old route network hidde
   assert.match(motion,/prefers-reduced-motion/);assert.match(motion,/createElement\('canvas'\)/);assert.match(motion,/const reduced/);assert.match(css,/\.academy-route-art\{display:none!important\}/);assert.match(css,/\.ocean-wave-canvas\{position:fixed!important/);
 });
 
-test('background wave caches its unchanged geometry and gradients and pauses offscreen', async () => {
+test('background wave caches unchanged geometry and gradients while remaining animated during scrolling', async () => {
   const motion = await readFile(path.join(root,'site-motion.js'),'utf8');
   assert.match(motion,/length:80/);
   assert.match(motion,/x <= width; x \+= 3/);
@@ -212,8 +212,9 @@ test('background wave caches its unchanged geometry and gradients and pauses off
   assert.match(motion,/cancelAnimationFrame\(frame\)/);
   assert.match(motion,/if \(!reduced && !document\.hidden\) frame = requestAnimationFrame\(draw\)/);
   assert.match(motion,/sample\.sinU \* phaseCos \+ sample\.cosU \* phaseSin/);
-  assert.match(motion,/window\.addEventListener\('scroll',[\s\S]*?\{ passive:true \}/);
-  assert.match(motion,/setTimeout\(resumeWave, 180\)/);
+  assert.doesNotMatch(motion,/addEventListener\('scroll'/);
+  assert.doesNotMatch(motion,/setTimeout\(resumeWave/);
+  assert.match(motion,/if \(!reduced && !document\.hidden\) frame = requestAnimationFrame\(draw\)/);
   assert.match(motion,/if \(reduced && width\)[\s\S]*?frame = requestAnimationFrame\(draw\)/);
 });
 

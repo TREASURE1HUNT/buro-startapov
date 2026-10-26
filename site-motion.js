@@ -72,17 +72,10 @@
     if (!reduced && !document.hidden) frame = requestAnimationFrame(draw);
   };
   resize(); window.addEventListener('resize', resize, { passive: true });
-  let scrollTimer = 0;
   const pauseWave = () => { if (frame) cancelAnimationFrame(frame); frame = 0; };
   const resumeWave = () => { if (!reduced && !document.hidden && !frame) frame = requestAnimationFrame(draw); };
-  window.addEventListener('scroll', () => {
-    if (reduced) return;
-    pauseWave();
-    clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(resumeWave, 180);
-  }, { passive:true });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { clearTimeout(scrollTimer); pauseWave(); }
+    if (document.hidden) pauseWave();
     else resumeWave();
   });
   resumeWave();
