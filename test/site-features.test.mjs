@@ -232,6 +232,22 @@ test('site defers offscreen media and browser font loading without delaying the 
   }
 });
 
+test('language menu persists and applies the selected locale with keyboard support and clear styling', async () => {
+  const settings = await readFile(path.join(root,'site-settings.js'),'utf8');
+  const css = await readFile(path.join(root,'enhancements.css'),'utf8');
+  assert.match(settings,/aria-label="Настройки языка" hidden/);
+  assert.match(settings,/Язык интерфейса<select id="site-language"/);
+  assert.match(settings,/if \(!\['ru','en'\]\.includes\(nextLanguage\)\) return/);
+  assert.match(settings,/try \{ localStorage\.setItem\(settingKey,JSON\.stringify\(preferences\)\); \} catch \{\}/);
+  assert.match(settings,/translateTree\(document\)/);
+  assert.match(settings,/event\.key==='Escape'/);
+  assert.match(settings,/'Язык интерфейса':'Interface language'/);
+  assert.match(css,/\.ranking-showcase \.showcase-card\{border:1px solid #7F7F9966!important/);
+  assert.match(css,/\.site-preferences-button\[aria-expanded="true"\]/);
+  assert.match(css,/\.site-preferences-panel select:focus-visible/);
+  assert.match(css,/\.site-preferences-panel select\{width:100%!important;min-height:42px/);
+});
+
 test('personal library filters by current owner and favorites are saved and exposed in the profile', async () => {
   const lib=await readFile(path.join(root,'project-library.js'),'utf8'),catalog=await readFile(path.join(root,'project-catalog.js'),'utf8'),profile=await readFile(path.join(root,'account-settings.js'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8');
   assert.match(lib,/ownerEmail \|\| ''\)\.toLowerCase\(\) === String\(sessionUser\.email/);assert.match(catalog,/buro-favorite-projects-v1/);assert.match(catalog,/data-favorite-id/);assert.match(profile,/favorite-startups-panel/);assert.match(profile,/account-tab-favorites/);assert.match(settings,/aria-hidden="true">文<\/span><\/button><section/);assert.doesNotMatch(settings,/site-preferences-caption|<b>Язык/);
