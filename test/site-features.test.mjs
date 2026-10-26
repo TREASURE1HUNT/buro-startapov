@@ -25,6 +25,17 @@ test('startup page enforces responsive markdown and contrast-aware project color
   assert.match(css,/\.markdown-rendered pre[^}]*overflow:auto/); assert.match(css,/overflow-wrap:anywhere/); assert.match(css,/data-site-theme="light"\] \.hero h1/);
 });
 
+test('every public page applies the dark palette before stylesheets to prevent color flash', async () => {
+  const pages=['index.html','projects.html','leaderboard.html','method.html','investors.html','create.html','profile.html','project.html','login.html','register.html'];
+  for(const page of pages){
+    const html=await readFile(path.join(root,page),'utf8');
+    const bootstrap=html.indexOf("document.documentElement.dataset.siteTheme='dark'");
+    const firstStylesheet=html.indexOf('<link rel="stylesheet"');
+    assert.ok(bootstrap>=0,`${page} has early theme bootstrap`);
+    assert.ok(firstStylesheet>=0&&bootstrap<firstStylesheet,`${page} sets palette before CSS`);
+  }
+});
+
 test('startup upload accepts larger promo clips while enforcing 8 MB per video and 10 MB total', async () => {
   const upload=await readFile(path.join(root,'site-enhancements.js'),'utf8'), detail=await readFile(path.join(root,'project-page.js'),'utf8');
   assert.match(upload,/file\.size>8\*1024\*1024/); assert.match(upload,/existingBytes\+addedBytes>10\*1024\*1024/); assert.match(upload,/localStorage\.setItem\('buro-startapov-projects-v1'.*catch\{\}location\.href/);
