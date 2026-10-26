@@ -259,6 +259,17 @@ test('language menu persists and applies the selected locale with keyboard suppo
   assert.match(css,/\.site-preferences-panel select\{width:100%!important;min-height:42px/);
 });
 
+test('all native dropdowns share the dark theme, arrow, focus, and selected-option colors', async () => {
+  const css = await readFile(path.join(root,'site-settings.css'),'utf8');
+  assert.match(css,/html\[data-site-theme="dark"\] body select\{appearance:none!important/);
+  assert.match(css,/color-scheme:dark/);
+  assert.match(css,/accent-color:#706DFF/);
+  assert.match(css,/background-position:right 13px center/);
+  assert.match(css,/body select option,html\[data-site-theme="dark"\] body select optgroup\{background:#1D1D33!important;color:#FFFFFF!important\}/);
+  assert.match(css,/body select option:checked\{background:#4F4F66!important;color:#FFFFFF!important\}/);
+  assert.match(css,/body select:focus-visible\{outline:2px solid #8281CC!important/);
+});
+
 test('personal library filters by current owner and favorites are saved and exposed in the profile', async () => {
   const lib=await readFile(path.join(root,'project-library.js'),'utf8'),catalog=await readFile(path.join(root,'project-catalog.js'),'utf8'),profile=await readFile(path.join(root,'account-settings.js'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8');
   assert.match(lib,/ownerEmail \|\| ''\)\.toLowerCase\(\) === String\(sessionUser\.email/);assert.match(catalog,/buro-favorite-projects-v1/);assert.match(catalog,/data-favorite-id/);assert.match(profile,/favorite-startups-panel/);assert.match(profile,/account-tab-favorites/);assert.match(settings,/aria-hidden="true">文<\/span><\/button><section/);assert.doesNotMatch(settings,/site-preferences-caption|<b>Язык/);
