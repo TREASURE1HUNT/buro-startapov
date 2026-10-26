@@ -40,11 +40,31 @@
     image.loading = rect.top < innerHeight * 1.5 ? 'eager' : 'lazy';
     image.decoding = 'async';
   };
+  const videoObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => entries.forEach(entry => {
+    const video = entry.target;
+    if (entry.isIntersecting) {
+      video.preload = 'metadata';
+      video.play()?.catch(() => {});
+    } else {
+      video.pause();
+      video.preload = 'none';
+    }
+  }), { rootMargin:'120px 0px', threshold:.01 }) : null;
+  const prepareVideo = video => {
+    if (!(video instanceof HTMLVideoElement) || !video.autoplay || !videoObserver) return;
+    video.pause();
+    video.autoplay = false;
+    video.preload = 'none';
+    videoObserver.observe(video);
+  };
   document.querySelectorAll('img').forEach(prepareImage);
+  document.querySelectorAll('video[autoplay]').forEach(prepareVideo);
   new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(node => {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     if (node.matches('img')) prepareImage(node);
     node.querySelectorAll?.('img').forEach(prepareImage);
+    if (node.matches('video[autoplay]')) prepareVideo(node);
+    node.querySelectorAll?.('video[autoplay]').forEach(prepareVideo);
   }))).observe(document.documentElement, { childList:true, subtree:true });
   theme();
   const topbar = document.querySelector('.topbar');

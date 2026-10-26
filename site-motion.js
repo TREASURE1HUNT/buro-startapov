@@ -16,7 +16,8 @@
       const leftRise = Math.exp(-Math.pow((u - .23) / .095, 2));
       const trough = Math.exp(-Math.pow((u - .37) / .07, 2));
       const rightRise = Math.exp(-Math.pow((u - .91) / .2, 2));
-      samples.push({ x, u, baseY: height * (.755 - .065 * u - .22 * centralRise - .065 * leftRise + .028 * trough - .055 * rightRise) });
+      samples.push({ x, u, sinU:Math.sin(u * 8.2), cosU:Math.cos(u * 8.2),
+        baseY: height * (.755 - .065 * u - .22 * centralRise - .065 * leftRise + .028 * trough - .055 * rightRise) });
     }
     lanes = Array.from({ length:80 }, (_, lane) => {
       const edge = Math.abs(lane - 39.5) / 39.5;
@@ -47,10 +48,12 @@
     ctx.globalCompositeOperation = 'screen';
     for (const item of lanes) {
       const { lane } = item;
+      const phase = lane * .035 - time * 1.7;
+      const phaseSin = Math.sin(phase), phaseCos = Math.cos(phase);
       ctx.beginPath();
       for (let i = 0; i < samples.length; i++) {
         const sample = samples[i];
-        const drift = Math.sin(sample.u * 8.2 - time * 1.7 + lane * .035) * height * .02;
+        const drift = (sample.sinU * phaseCos + sample.cosU * phaseSin) * height * .02;
         const y = sample.baseY + (lane - 39.5) * height * .0065 + drift;
         if (i === 0) ctx.moveTo(sample.x, y); else ctx.lineTo(sample.x, y);
       }
@@ -65,11 +68,20 @@
     if (!reduced && !document.hidden) frame = requestAnimationFrame(draw);
   };
   resize(); window.addEventListener('resize', resize, { passive: true });
+  let scrollTimer = 0;
+  const pauseWave = () => { if (frame) cancelAnimationFrame(frame); frame = 0; };
+  const resumeWave = () => { if (!reduced && !document.hidden && !frame) frame = requestAnimationFrame(draw); };
+  window.addEventListener('scroll', () => {
+    if (reduced) return;
+    pauseWave();
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(resumeWave, 180);
+  }, { passive:true });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { cancelAnimationFrame(frame); frame = 0; }
-    else if (!reduced && !frame) frame = requestAnimationFrame(draw);
+    if (document.hidden) { clearTimeout(scrollTimer); pauseWave(); }
+    else resumeWave();
   });
-  frame = requestAnimationFrame(draw);
+  resumeWave();
 
   const revealTargets = document.querySelectorAll('.academy-hero-copy,.workspace-head,.academy-section-heading,.leader-row,.library-project-card');
   const animate = window.anime?.animate;

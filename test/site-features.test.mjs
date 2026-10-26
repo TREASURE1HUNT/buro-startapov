@@ -211,6 +211,9 @@ test('background wave caches its unchanged geometry and gradients and pauses off
   assert.match(motion,/for \(const item of lanes\)/);
   assert.match(motion,/cancelAnimationFrame\(frame\)/);
   assert.match(motion,/if \(!reduced && !document\.hidden\) frame = requestAnimationFrame\(draw\)/);
+  assert.match(motion,/sample\.sinU \* phaseCos \+ sample\.cosU \* phaseSin/);
+  assert.match(motion,/window\.addEventListener\('scroll',[\s\S]*?\{ passive:true \}/);
+  assert.match(motion,/setTimeout\(resumeWave, 180\)/);
 });
 
 test('site logo and favicon use the bird mark', async () => {
@@ -225,6 +228,10 @@ test('site defers offscreen media and browser font loading without delaying the 
   assert.match(settings,/image\.loading = rect\.top < innerHeight \* 1\.5 \? 'eager' : 'lazy'/);
   assert.match(settings,/image\.decoding = 'async'/);
   assert.match(settings,/new MutationObserver/);
+  assert.match(settings,/new IntersectionObserver\(entries => entries\.forEach/);
+  assert.match(settings,/video\.preload = 'none'/);
+  assert.match(settings,/video\.pause\(\)/);
+  assert.match(settings,/video\.play\(\)\?\.catch/);
   assert.match(css,/content-visibility: auto/);
   for (const file of (await htmlFiles).filter(name => name.endsWith('.html'))) {
     const page = await readFile(path.join(root,file),'utf8');
