@@ -123,7 +123,15 @@ if (login) login.addEventListener('submit', async event => {
       }
       throw error;
     }
-    if (data.verificationRequired) throw new Error('Сеанс аккаунта устарел. Зарегистрируйтесь заново.');
+    if (data.verificationRequired && data.purpose === 'device-link') {
+      const pendingDeviceId = deviceId();
+      const settings = { url: `${location.origin}/login.html?device=1&did=${encodeURIComponent(pendingDeviceId)}&email=${encodeURIComponent(email)}`, handleCodeInApp: true };
+      await sendSignInLinkToEmail(auth, email, settings);
+      localStorage.setItem('buro-firebase-device-link', JSON.stringify({ email, next: redirectAfterLogin(), deviceId: pendingDeviceId }));
+      await signOut(auth);
+      show(result, `Ссылка для входа отправлена на ${email}. Откройте её из письма на этом устройстве.`); return;
+    }
+    if (data.verificationRequired) throw new Error('Сеанс аккаунта устарел. Войдите снова.');
     cacheState(data); show(result, 'Вход выполнен. Открываю профиль…');
     setTimeout(() => { location.href = redirectAfterLogin(); }, 250);
   } catch (error) { show(result, errorMessage(error), 'error'); }

@@ -164,9 +164,24 @@ test('account signup and login work without email delivery or verification', asy
   const db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8');
   assert.match(auth,/cacheState\(challenge\); show\(result, 'Аккаунт создан/);
   assert.doesNotMatch(auth,/legacyCodeStep\(register|firebase-email-start/);
+  assert.match(auth,/data\.verificationRequired && data\.purpose === 'device-link'/);
+  assert.match(auth,/sendSignInLinkToEmail\(auth, email, settings\)/);
   assert.match(db,/INSERT INTO app_accounts\(email,name,role,password_hash,password_salt,password_scheme,profile,email_verified_at\)/);
   assert.match(db,/await trustDevice\(email,deviceHash,deviceLabel\)/);
   assert.doesNotMatch(db,/await createAuthChallenge\(email,'register'/);
+});
+
+test('login device confirmation uses Firebase link and auth script cache is invalidated', async () => {
+  const auth=await readFile(path.join(root,'firebase-auth.js'),'utf8');
+  const database=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8');
+  const login=await readFile(path.join(root,'login.html'),'utf8');
+  const register=await readFile(path.join(root,'register.html'),'utf8');
+  assert.match(database,/purpose: 'device-link'/);
+  assert.match(auth,/data\.verificationRequired && data\.purpose === 'device-link'/);
+  assert.match(auth,/sendSignInLinkToEmail\(auth, email, settings\)/);
+  assert.match(auth,/Ссылка для входа отправлена на/);
+  assert.match(login,/firebase-auth\.js\?v=auth-no-signup-mail-login-link-3/);
+  assert.match(register,/firebase-auth\.js\?v=auth-no-signup-mail-login-link-3/);
 });
 
 test('startup media ordering rerenders cards and README markdown uses a sanitizer', async () => {
