@@ -270,6 +270,18 @@ test('all native dropdowns share the dark theme, arrow, focus, and selected-opti
   assert.match(css,/body select:focus-visible\{outline:2px solid #8281CC!important/);
 });
 
+test('account avatar, empty startup state, and project form stay clean and responsive', async () => {
+  const css = await readFile(path.join(root,'enhancements.css'),'utf8');
+  const account = await readFile(path.join(root,'account-settings.js'),'utf8');
+  assert.match(account,/account-avatar-overlay/);
+  assert.match(css,/\.account-avatar-picker\{background:transparent!important;border:0!important/);
+  assert.match(css,/\.account-avatar-overlay\{inset:auto 0 0 auto!important;width:23px;height:23px/);
+  assert.match(css,/\.my-startups-panel\{background:transparent!important/);
+  assert.match(css,/\.owned-startups-empty[^}]*background:rgba\(29,29,51,\.28\)!important/);
+  assert.match(css,/\.form-extra\{background:rgba\(29,29,51,\.48\)!important/);
+  assert.match(css,/\.workspace-grid\{grid-template-columns:minmax\(0,1fr\)!important\}/);
+});
+
 test('personal library filters by current owner and favorites are saved and exposed in the profile', async () => {
   const lib=await readFile(path.join(root,'project-library.js'),'utf8'),catalog=await readFile(path.join(root,'project-catalog.js'),'utf8'),profile=await readFile(path.join(root,'account-settings.js'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8');
   assert.match(lib,/ownerEmail \|\| ''\)\.toLowerCase\(\) === String\(sessionUser\.email/);assert.match(catalog,/buro-favorite-projects-v1/);assert.match(catalog,/data-favorite-id/);assert.match(profile,/favorite-startups-panel/);assert.match(profile,/account-tab-favorites/);assert.match(settings,/aria-hidden="true">文<\/span><\/button><section/);assert.doesNotMatch(settings,/site-preferences-caption|<b>Язык/);

@@ -402,3 +402,23 @@ html[data-site-theme="dark"] .ranking-showcase .showcase-art{outline:1px solid #
 .site-preferences-panel label{display:grid!important;gap:9px!important;margin:0!important;color:#C4C3D7!important;font:500 11px/1.4 Manrope,Arial,sans-serif!important}
 .site-preferences-panel select{width:100%!important;min-height:42px;padding:0 12px!important;border:1px solid #7F7F9977!important;border-radius:6px!important;background:#1D1D33!important;color:#FFFFFF!important;font:500 13px Manrope,Arial,sans-serif!important;cursor:pointer}
 @media(max-width:720px){.site-preferences-panel{right:-8px!important;width:220px!important}.site-preferences-button{width:40px;height:40px}}
+
+/* Fix avatar badge, empty account state, and narrow project-form overflow. */
+html[data-site-theme="dark"] .account-avatar-picker{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
+html[data-site-theme="dark"] .account-avatar-picker>small{max-width:165px;color:#C4C3D7!important}
+html[data-site-theme="dark"] .account-avatar-button{position:relative;overflow:visible!important;background:#1D1D33!important;border:1px solid #8281CC!important;isolation:isolate}
+html[data-site-theme="dark"] .account-avatar-preview,html[data-site-theme="dark"] .account-avatar-placeholder{border-radius:50%}
+html[data-site-theme="dark"] .account-avatar-overlay{inset:auto 0 0 auto!important;width:23px;height:23px;border:1px solid #1D1D33;border-radius:50%;background:#706DFF!important;color:#FFFFFF!important;opacity:1!important;font:14px/1 Manrope,Arial,sans-serif!important}
+html[data-site-theme="dark"] .my-startups-panel{background:transparent!important;border:1px solid #7F7F9938!important;color:#FFFFFF!important}
+html[data-site-theme="dark"] .owned-startups-empty,html[data-site-theme="dark"] .favorite-startups-empty{padding:24px!important;border:1px solid #7F7F9938!important;border-left:2px solid #706DFF!important;border-radius:6px;background:rgba(29,29,51,.28)!important;color:#C4C3D7!important}
+html[data-site-theme="dark"] .owned-startups-empty h3,html[data-site-theme="dark"] .favorite-startups-empty h3{color:#FFFFFF!important}
+html[data-site-theme="dark"] .owned-startups-empty p,html[data-site-theme="dark"] .favorite-startups-empty p{color:#C4C3D7!important}
+html[data-site-theme="dark"] .form-extra{background:rgba(29,29,51,.48)!important;border:1px solid #7F7F9955!important;border-radius:7px;color:#FFFFFF!important}
+html[data-site-theme="dark"] .form-extra summary{color:#FFFFFF!important}
+html[data-site-theme="dark"] .form-extra[open] summary{color:#B3B2FF!important}
+.workspace-grid{grid-template-columns:minmax(0,1.08fr) minmax(280px,.92fr)!important}
+.workspace-grid>.project-form,.workspace-grid>.preview-card{min-width:0;width:100%}
+.workspace-grid .form-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+.workspace-grid .form-row>*{min-width:0}
+@media(max-width:940px){.workspace-grid{grid-template-columns:minmax(0,1fr)!important}.workspace-grid>.project-form,.workspace-grid>.preview-card{width:100%;min-width:0}.workspace-grid>.preview-card{position:static}}
+@media(max-width:680px){.workspace-grid .form-row{grid-template-columns:minmax(0,1fr)}}
