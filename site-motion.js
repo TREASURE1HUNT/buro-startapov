@@ -7,29 +7,18 @@
   const ctx = canvas.getContext('2d', { alpha: true });
   const palette = ['#706DFF', '#8281CC', '#7F7F99', '#8281CC', '#706DFF'];
   let width = 0, height = 0, ratio = 1;
-  const resize = () => {
-    width = window.innerWidth; height = window.innerHeight;
-    ratio = Math.min(window.devicePixelRatio || 1, 1.5);
-    canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
-    canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
-    ctx?.setTransform(ratio, 0, 0, ratio, 0, 0);
-  };
-  const pathY = (u, lane, time) => {
-    const centralRise = Math.exp(-Math.pow((u - .49) / .17, 2));
-    const leftRise = Math.exp(-Math.pow((u - .23) / .095, 2));
-    const trough = Math.exp(-Math.pow((u - .37) / .07, 2));
-    const rightRise = Math.exp(-Math.pow((u - .91) / .2, 2));
-    const drift = Math.sin(u * 8.2 - time * 1.7 + lane * .035) * height * .02;
-    return height * (.755 - .065 * u - .22 * centralRise - .065 * leftRise + .028 * trough - .055 * rightRise) +
-      (lane - 39.5) * height * .0065 + drift;
-  };
-  const draw = now => {
-    if (!ctx) return;
-    if (!width || canvas.width !== Math.round(window.innerWidth * ratio) || canvas.height !== Math.round(window.innerHeight * ratio)) resize();
-    ctx.clearRect(0, 0, width, height);
-    const time = reduced ? 0 : now * .00022;
-    ctx.globalCompositeOperation = 'screen';
-    for (let lane = 0; lane < 80; lane++) {
+  let samples = [], lanes = [], frame = 0;
+  const buildWaveCache = () => {
+    samples = [];
+    for (let x = 0; x <= width; x += 3) {
+      const u = x / width;
+      const centralRise = Math.exp(-Math.pow((u - .49) / .17, 2));
+      const leftRise = Math.exp(-Math.pow((u - .23) / .095, 2));
+      const trough = Math.exp(-Math.pow((u - .37) / .07, 2));
+      const rightRise = Math.exp(-Math.pow((u - .91) / .2, 2));
+      samples.push({ x, u, baseY: height * (.755 - .065 * u - .22 * centralRise - .065 * leftRise + .028 * trough - .055 * rightRise) });
+    }
+    lanes = Array.from({ length:80 }, (_, lane) => {
       const edge = Math.abs(lane - 39.5) / 39.5;
       const strength = (1 - edge * .58) * (.28 + ((lane * 17) % 11) / 17);
       const grad = ctx.createLinearGradient(0, 0, width, 0);
@@ -38,22 +27,49 @@
       grad.addColorStop(.48, `rgba(127,127,153,${strength * .42})`);
       grad.addColorStop(.68, `rgba(130,129,204,${strength * .58})`);
       grad.addColorStop(1, `rgba(112,109,255,${strength * .12})`);
+      return { lane, grad, lineWidth:lane % 7 === 0 ? 1.65 : 1.05, alpha:lane % 7 === 0 ? 1 : .82,
+        shadowColor:palette[lane % palette.length], shadowBlur:lane % 7 === 0 ? 12 : 4 };
+    });
+  };
+  const resize = () => {
+    width = window.innerWidth; height = window.innerHeight;
+    ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+    canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
+    canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
+    ctx?.setTransform(ratio, 0, 0, ratio, 0, 0);
+    if (ctx && width) buildWaveCache();
+  };
+  const draw = now => {
+    if (!ctx) return;
+    if (!width || canvas.width !== Math.round(window.innerWidth * ratio) || canvas.height !== Math.round(window.innerHeight * ratio)) resize();
+    ctx.clearRect(0, 0, width, height);
+    const time = reduced ? 0 : now * .00022;
+    ctx.globalCompositeOperation = 'screen';
+    for (const item of lanes) {
+      const { lane } = item;
       ctx.beginPath();
-      for (let x = 0; x <= width; x += 3) {
-        const u = x / width, y = pathY(u, lane, time);
-        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      for (let i = 0; i < samples.length; i++) {
+        const sample = samples[i];
+        const drift = Math.sin(sample.u * 8.2 - time * 1.7 + lane * .035) * height * .02;
+        const y = sample.baseY + (lane - 39.5) * height * .0065 + drift;
+        if (i === 0) ctx.moveTo(sample.x, y); else ctx.lineTo(sample.x, y);
       }
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = lane % 7 === 0 ? 1.65 : 1.05;
-      ctx.globalAlpha = lane % 7 === 0 ? 1 : .82;
-      ctx.shadowColor = palette[lane % palette.length];
-      ctx.shadowBlur = lane % 7 === 0 ? 12 : 4;
+      ctx.strokeStyle = item.grad;
+      ctx.lineWidth = item.lineWidth;
+      ctx.globalAlpha = item.alpha;
+      ctx.shadowColor = item.shadowColor;
+      ctx.shadowBlur = item.shadowBlur;
       ctx.stroke();
     }
     ctx.shadowBlur = 0; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    if (!reduced) requestAnimationFrame(draw);
+    if (!reduced && !document.hidden) frame = requestAnimationFrame(draw);
   };
-  resize(); window.addEventListener('resize', resize, { passive: true }); requestAnimationFrame(draw);
+  resize(); window.addEventListener('resize', resize, { passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { cancelAnimationFrame(frame); frame = 0; }
+    else if (!reduced && !frame) frame = requestAnimationFrame(draw);
+  });
+  frame = requestAnimationFrame(draw);
 
   const revealTargets = document.querySelectorAll('.academy-hero-copy,.workspace-head,.academy-section-heading,.leader-row,.library-project-card');
   const animate = window.anime?.animate;
