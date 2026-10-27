@@ -135,6 +135,7 @@ test('site settings provide gear menu, saved accessibility modes, screen-reader 
   assert.match(css,/data-accessibility-low-vision="true"/); assert.match(css,/data-accessibility-color-vision="true"/); assert.match(css,/data-screen-reader-assist="true"/);
   assert.match(css,/--cv-blue:#56B4E9/); assert.match(css,/repeating-linear-gradient\(135deg,var\(--cv-blue\)/); assert.match(css,/favorite-toggle\.is-favorite\{color:var\(--cv-orange\)/);
   assert.match(js,/accessibility-option-hint/);
+  assert.match(css,/Full-site color-vision theme/); assert.match(css,/body\{background:#081A2B!important/); assert.match(css,/\.projects-section,\.community-section,\.academy-proof/); assert.match(css,/body :is\(input,textarea,select/);
   const translations=await readFile(path.join(root,'translations-en.js'),'utf8'); assert.match(translations,/Uses distinct colors and icons to communicate status/);
   assert.match(css,/\.accessibility-skip-link:focus/); assert.match(css,/\.accessibility-speech-controls/);
 });
