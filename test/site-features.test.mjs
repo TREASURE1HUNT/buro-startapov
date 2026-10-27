@@ -239,6 +239,11 @@ test('leaderboard panel remains transparent and email verification is disabled',
   assert.match(db,/email_verified_at\) VALUES\(\$\{email\}.*now\(\)/);
 });
 
+test('leaderboard combines the shared database projects with local projects and shared votes', async () => {
+  const ranking=await readFile(path.join(root,'ranking.js'),'utf8'),html=await readFile(path.join(root,'leaderboard.html'),'utf8');
+  assert.match(ranking,/api\/database\?action=projects/);assert.match(ranking,/remoteProjects=Array\.isArray\(data\.projects\)/);assert.match(ranking,/remoteVotes\[p\.id\]/);assert.match(ranking,/byId\.set\(p\.id,\{\.\.\.p\}\)/);assert.match(html,/ranking\.js\?v=load-remote-projects-1/);
+});
+
 test('site uses the supplied periwinkle palette and renders one animated sheet divided into flow lines', async () => {
   const motion=await readFile(path.join(root,'site-motion.js'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8'),settingsCss=await readFile(path.join(root,'site-settings.css'),'utf8');
   assert.match(settings,/dataset\.siteTheme = 'dark'/); assert.match(motion,/halfDepth = height \* \.25675/); assert.match(motion,/surfaceGradient\.addColorStop/); assert.match(motion,/ctx\.fill\(\)/); assert.match(motion,/requestAnimationFrame\(draw\)/); assert.doesNotMatch(motion,/route-branch|route-wave-purple/);
