@@ -127,8 +127,8 @@ test('site settings provide gear menu, saved accessibility modes, screen-reader 
   const js=await readFile(path.join(root,'site-settings.js'),'utf8');
   const css=await readFile(path.join(root,'enhancements.css'),'utf8');
   assert.match(js,/site-preferences-button[^>]*aria-label="Открыть настройки сайта"/);
-  assert.match(js,/<svg viewBox="4 4 18 18"[^>]*aria-hidden="true"/);
-  assert.match(css,/\.site-preferences-button svg\{display:block;width:29px!important;height:29px!important/);
+  assert.match(js,/<svg viewBox="0 0 24 24"[^>]*aria-hidden="true"/);
+  assert.match(css,/\.site-preferences-button svg\{display:block;width:20px!important;height:20px!important/);
   assert.match(js,/id="access-low-vision"/); assert.match(js,/id="access-color-vision"/); assert.match(js,/id="access-blind-mode"/);
   assert.match(js,/preferences\.lowVision = lowVision\.checked/); assert.match(js,/preferences\.colorVision = colorVision\.checked/); assert.match(js,/preferences\.blindMode = blindMode\.checked/);
   assert.match(js,/speechSynthesis\.speak\(utterance\)/); assert.match(js,/speechSynthesis\?\.cancel\(\)/);

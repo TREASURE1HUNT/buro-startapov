@@ -511,8 +511,8 @@ html[data-accessibility-color-vision="true"] body :is(.gradient-text,.text-link 
 html[data-accessibility-color-vision="true"] body :is(.rank-one,.favorite-toggle.is-favorite,.vote-button.selected){color:#E69F00!important;-webkit-text-fill-color:#E69F00!important;border-color:#E69F00!important;outline:2px solid #E69F00!important;outline-offset:2px}
 html[data-accessibility-color-vision="true"] body :is(.error,.error-message,.danger,.status-error){color:#D55E00!important;border-left:4px solid #D55E00!important;padding-left:8px!important}
 html[data-accessibility-color-vision="true"] body :is(.success,.success-message,.status-success){color:#56B4E9!important;border-left:4px double #56B4E9!important;padding-left:8px!important}
-html[data-accessibility-color-vision="true"] .site-preferences-button{width:46px!important;height:46px!important;border:1px solid #56B4E9!important;border-radius:13px!important;background:linear-gradient(145deg,#222640,#11131F)!important;color:#D8F2FF!important;box-shadow:0 0 0 3px #56B4E922,0 8px 22px #0008!important}
-.site-preferences-button svg{width:23px!important;height:23px!important;stroke-width:2!important}
+html[data-accessibility-color-vision="true"] .site-preferences-button{width:40px!important;height:40px!important;border:1px solid #56B4E9!important;border-radius:11px!important;background:linear-gradient(145deg,#222640,#11131F)!important;color:#D8F2FF!important;box-shadow:0 0 0 2px #56B4E922,0 5px 15px #0008!important}
+.site-preferences-button svg{width:20px!important;height:20px!important;stroke-width:1.8!important}
 .site-preferences-panel .accessibility-color-vision-option>span{display:grid;gap:4px}
 .site-preferences-panel .accessibility-option-hint{display:block;color:#D7E7F3;font-size:10px;line-height:1.45;font-weight:400}
 
@@ -537,6 +537,6 @@ html[data-accessibility-color-vision="true"] body :is(.project-art,.catalog-art,
 html[data-accessibility-color-vision="true"] body :is(.grain,.ocean-wave-canvas){opacity:.16!important}
 
 /* Make the settings gear itself legible at a glance, not a tiny glyph in a tile. */
-.site-preferences-button{width:46px!important;height:46px!important;border:1px solid #8281CC!important;border-radius:13px!important;background:linear-gradient(145deg,#252540,#151522)!important;color:#D9D8FF!important;box-shadow:0 0 0 3px #706DFF20,0 8px 22px #0008!important}
-.site-preferences-button svg{display:block;width:29px!important;height:29px!important;overflow:visible;stroke:currentColor!important;stroke-width:2.2!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+.site-preferences-button{width:40px!important;height:40px!important;display:grid!important;place-items:center!important;padding:0!important;border:1px solid #8281CC!important;border-radius:10px!important;background:linear-gradient(145deg,#252540,#151522)!important;color:#D9D8FF!important;box-shadow:0 0 0 2px #706DFF20,0 5px 15px #0008!important}
+.site-preferences-button svg{display:block;width:20px!important;height:20px!important;margin:0!important;padding:0!important;overflow:visible;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
 .site-preferences-button:hover,.site-preferences-button[aria-expanded="true"]{color:#FFFFFF!important;border-color:#B3B2FF!important;background:#35354D!important;box-shadow:0 0 0 4px #706DFF35,0 10px 26px #0009!important}
