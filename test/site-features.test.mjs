@@ -376,3 +376,9 @@ test('admin uses site colors and can wake API, database, and AI without generati
   const html=await readFile(path.join(root,'admin/index.html'),'utf8'),app=await readFile(path.join(root,'admin/app.js'),'utf8'),server=await readFile(path.join(root,'render/admin-server.mjs'),'utf8'),css=await readFile(path.join(root,'admin/styles.css'),'utf8'),config=await readFile(path.join(root,'render.yaml'),'utf8');
   assert.match(html,/wake-all/);assert.match(html,/data-wake="ai"/);assert.match(app,/api\/admin\/wake/);assert.match(server,/SELECT 1/);assert.match(server,/inference\.dahl\.global/);assert.match(server,/\/models/);assert.doesNotMatch(server,/chat\/completions/);assert.match(css,/--bg:#09090F/);assert.match(css,/--lime:#14F195/);assert.match(config,/INFERENCE_API_KEY/);
 });
+
+test('role guide is linked from the footer and served as a PDF', async () => {
+  const settings=await readFile(path.join(root,'site-settings.js'),'utf8'), server=await readFile(path.join(root,'render-server.mjs'),'utf8'), pdf=await readFile(path.join(root,'output/pdf/user-guide.pdf'));
+  assert.match(settings,/user-guide\.pdf/); assert.match(settings,/Руководство пользователя/);
+  assert.match(server,/\.pdf': 'application\/pdf'/); assert.equal(pdf.subarray(0,5).toString(),'%PDF-');
+});
