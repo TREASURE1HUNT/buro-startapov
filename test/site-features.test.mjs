@@ -133,6 +133,9 @@ test('site settings provide gear menu, saved accessibility modes, screen-reader 
   assert.match(js,/speechSynthesis\.speak\(utterance\)/); assert.match(js,/speechSynthesis\?\.cancel\(\)/);
   assert.match(js,/accessibility-skip-link/); assert.match(js,/main\.tabIndex = -1/);
   assert.match(css,/data-accessibility-low-vision="true"/); assert.match(css,/data-accessibility-color-vision="true"/); assert.match(css,/data-screen-reader-assist="true"/);
+  assert.match(css,/--cv-blue:#56B4E9/); assert.match(css,/repeating-linear-gradient\(135deg,var\(--cv-blue\)/); assert.match(css,/favorite-toggle\.is-favorite\{color:var\(--cv-orange\)/); assert.doesNotMatch(css,/data-accessibility-color-vision="true"\] body :is\(a:not\(\.button\)/);
+  assert.match(js,/accessibility-option-hint/);
+  const translations=await readFile(path.join(root,'translations-en.js'),'utf8'); assert.match(translations,/Uses distinct colors and icons to communicate status/);
   assert.match(css,/\.accessibility-skip-link:focus/); assert.match(css,/\.accessibility-speech-controls/);
 });
 

@@ -423,11 +423,17 @@ html[data-accessibility-low-vision="true"] body{line-height:1.65!important;lette
 html[data-accessibility-low-vision="true"] body :is(p,li,label,button,a,input,textarea,select,small,.section-index,.project-meta,.field-hint){font-size:1.12rem!important;line-height:1.65!important}
 html[data-accessibility-low-vision="true"] body :is(p,li,label,small,.section-index,.project-meta,.field-hint){color:#E1E4F2!important;opacity:1!important}
 html[data-accessibility-low-vision="true"] body :is(a,button,input,textarea,select,summary,[tabindex]):focus-visible{outline:3px solid #B3B2FF!important;outline-offset:4px!important}
-html[data-accessibility-color-vision="true"]{--access-accent:#79D5FF;--access-secondary:#FFC36E}
-html[data-accessibility-color-vision="true"] body :is(.pulse,.live-dot,.status-dot,.online-dot,.progress i,.guide-progress i){background:#79D5FF!important;border:1px solid #fff!important;box-shadow:none!important}
-html[data-accessibility-color-vision="true"] body :is(.gradient-text,.text-link span,.arrow-link span,.module-link span,.method-num,.rank-one,.score small){background:none!important;color:#79D5FF!important;-webkit-text-fill-color:#79D5FF!important}
-html[data-accessibility-color-vision="true"] body :is(a:not(.button),button:not(.button),.vote-button,.favorite-toggle){text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
-html[data-accessibility-color-vision="true"] body :is(.vote-button.selected,.favorite-toggle.is-favorite){outline:2px dashed #FFC36E!important;outline-offset:2px}
+html[data-accessibility-color-vision="true"]{--access-accent:#56B4E9;--access-secondary:#E69F00;--cv-blue:#56B4E9;--cv-orange:#E69F00;--cv-vermillion:#D55E00;--cv-teal:#009E73;--cv-purple:#CC79A7;--cv-deep-blue:#0072B2}
+/* Color is never the only status cue: colors use a color-vision-safe palette and
+   indicators gain distinct shapes, outlines, or existing text/icon labels. */
+html[data-accessibility-color-vision="true"] body :is(.pulse,.live-dot,.status-dot,.online-dot){background:var(--cv-blue)!important;border:1px solid #FFFFFF!important;border-radius:2px!important;box-shadow:0 0 0 2px #56B4E944!important}
+html[data-accessibility-color-vision="true"] body :is(.progress i,.guide-progress i){background:repeating-linear-gradient(135deg,var(--cv-blue) 0 5px,#1A3450 5px 8px)!important;border:1px solid #CDEEFF!important;box-shadow:none!important}
+html[data-accessibility-color-vision="true"] body :is(.gradient-text,.text-link span,.arrow-link span,.module-link span,.method-num,.rank-one,.score small){background:none!important;color:var(--cv-blue)!important;-webkit-text-fill-color:var(--cv-blue)!important}
+html[data-accessibility-color-vision="true"] body :is(.vote-button.selected,.favorite-toggle.is-favorite){outline:2px solid var(--cv-orange)!important;outline-offset:2px;box-shadow:inset 0 0 0 1px #FFFFFF!important}
+html[data-accessibility-color-vision="true"] body .favorite-toggle.is-favorite{color:var(--cv-orange)!important;border-color:var(--cv-orange)!important}
+html[data-accessibility-color-vision="true"] body :is(.rank-one,.score small){color:var(--cv-orange)!important;-webkit-text-fill-color:var(--cv-orange)!important}
+html[data-accessibility-color-vision="true"] body .site-preferences-panel .accessibility-color-vision-option{padding:10px!important;border:1px solid #56B4E988!important;border-radius:8px!important;background:#56B4E911!important}
+html[data-accessibility-color-vision="true"] body .accessibility-option-hint{display:block;color:#D7E7F3!important;font-size:10px!important;line-height:1.45!important;font-weight:400!important}
 html[data-screen-reader-assist="true"] body :is(a,button,input,textarea,select,summary,[tabindex]):focus-visible{outline:3px solid #B3B2FF!important;outline-offset:4px!important;scroll-margin-block:110px}
 html[data-screen-reader-assist="true"] body main{scroll-margin-top:100px}
 @media(max-width:720px){.site-preferences-panel{right:-8px!important;width:min(330px,calc(100vw - 24px))!important}.site-preferences-panel .accessibility-options .accessibility-option{font-size:12px!important}}
