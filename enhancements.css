@@ -540,3 +540,9 @@ html[data-accessibility-color-vision="true"] body :is(.grain,.ocean-wave-canvas)
 .site-preferences-button{width:40px!important;height:40px!important;display:grid!important;place-items:center!important;padding:0!important;border:1px solid #8281CC!important;border-radius:10px!important;background:linear-gradient(145deg,#252540,#151522)!important;color:#D9D8FF!important;box-shadow:0 0 0 2px #706DFF20,0 5px 15px #0008!important}
 .site-preferences-button svg{display:block;width:20px!important;height:20px!important;margin:0!important;padding:0!important;overflow:visible;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
 .site-preferences-button:hover,.site-preferences-button[aria-expanded="true"]{color:#FFFFFF!important;border-color:#B3B2FF!important;background:#35354D!important;box-shadow:0 0 0 4px #706DFF35,0 10px 26px #0009!important}
+
+/* The settings trigger is now a standalone down-chevron, not a boxed gear. */
+.site-preferences-button,.site-preferences-button:hover,.site-preferences-button[aria-expanded="true"]{width:34px!important;height:34px!important;min-width:34px!important;display:grid!important;place-items:center!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:#B3B2FF!important;box-shadow:none!important;backdrop-filter:none!important;transform:none!important}
+.site-preferences-button svg{width:19px!important;height:19px!important;margin:0!important;stroke:currentColor!important;stroke-width:2!important;stroke-linecap:round!important;stroke-linejoin:round!important;transition:transform .18s ease}
+.site-preferences-button[aria-expanded="true"] svg{transform:rotate(180deg)}
+.site-preferences-button:hover{color:#FFFFFF!important}

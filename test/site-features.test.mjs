@@ -128,6 +128,8 @@ test('site settings provide gear menu, saved accessibility modes, screen-reader 
   const css=await readFile(path.join(root,'enhancements.css'),'utf8');
   assert.match(js,/site-preferences-button[^>]*aria-label="Открыть настройки сайта"/);
   assert.match(js,/<svg viewBox="0 0 24 24"[^>]*aria-hidden="true"/);
+  assert.match(js,/<path d="M6 9l6 6 6-6"\/><\/svg>/); assert.doesNotMatch(js,/m19\.4 13\.5/);
+  assert.match(css,/The settings trigger is now a standalone down-chevron/); assert.match(css,/border:0!important;border-radius:0!important;background:transparent!important/);
   assert.match(css,/\.site-preferences-button svg\{display:block;width:20px!important;height:20px!important/);
   assert.match(js,/id="access-low-vision"/); assert.match(js,/id="access-color-vision"/); assert.match(js,/id="access-blind-mode"/);
   assert.match(js,/preferences\.lowVision = lowVision\.checked/); assert.match(js,/preferences\.colorVision = colorVision\.checked/); assert.match(js,/preferences\.blindMode = blindMode\.checked/);
