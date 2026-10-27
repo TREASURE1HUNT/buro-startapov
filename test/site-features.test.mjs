@@ -123,6 +123,31 @@ test('site settings include persistent RU/EN language control and the dark ocean
   assert.match(js,/page_view/); assert.match(js,/project_view/); assert.match(html,/site-settings\.css/); assert.match(html,/site-settings\.js/);
 });
 
+test('site settings provide gear menu, saved accessibility modes, screen-reader skip link and narration', async () => {
+  const js=await readFile(path.join(root,'site-settings.js'),'utf8');
+  const css=await readFile(path.join(root,'enhancements.css'),'utf8');
+  assert.match(js,/site-preferences-button[^>]*aria-label="Открыть настройки сайта"/);
+  assert.match(js,/<svg viewBox="0 0 24 24"[^>]*aria-hidden="true"/);
+  assert.match(js,/id="access-low-vision"/); assert.match(js,/id="access-color-vision"/); assert.match(js,/id="access-blind-mode"/);
+  assert.match(js,/preferences\.lowVision = lowVision\.checked/); assert.match(js,/preferences\.colorVision = colorVision\.checked/); assert.match(js,/preferences\.blindMode = blindMode\.checked/);
+  assert.match(js,/speechSynthesis\.speak\(utterance\)/); assert.match(js,/speechSynthesis\?\.cancel\(\)/);
+  assert.match(js,/accessibility-skip-link/); assert.match(js,/main\.tabIndex = -1/);
+  assert.match(css,/data-accessibility-low-vision="true"/); assert.match(css,/data-accessibility-color-vision="true"/); assert.match(css,/data-screen-reader-assist="true"/);
+  assert.match(css,/\.accessibility-skip-link:focus/); assert.match(css,/\.accessibility-speech-controls/);
+});
+
+test('startup creation and AI review actions use clear, keyboard-visible button styles', async () => {
+  const html=await readFile(path.join(root,'create.html'),'utf8');
+  const enhancement=await readFile(path.join(root,'site-enhancements.js'),'utf8');
+  const css=await readFile(path.join(root,'enhancements.css'),'utf8');
+  assert.match(html,/<button class="button" type="submit">Сохранить и открыть проект/);
+  assert.match(html,/class="clear-button" type="button" id="clear-form"/);
+  assert.match(html,/class="clear-button" id="ai-review" type="button"/);
+  assert.match(enhancement,/class="clear-button full-project-preview-trigger"/);
+  assert.match(css,/\.project-form \.form-actions \.clear-button/); assert.match(css,/\.project-form #ai-review/); assert.match(css,/\.full-project-preview-trigger:hover/);
+  assert.match(css,/\.project-form :is\(\.form-actions button,#ai-review,#theme-reset,\.full-project-preview-trigger\):focus-visible/);
+});
+
 test('signed-in header hides account signup and always exposes investors navigation', async () => {
   const js=await readFile(path.join(root,'account-ui.js'),'utf8');
   assert.match(js,/\.nav a\[href="register\.html"\]/); assert.match(js,/investors\.html/); assert.match(js,/nav\.insertBefore\(investors,create\|\|null\)/);
@@ -299,10 +324,10 @@ test('site defers offscreen media and browser font loading without delaying the 
 test('language menu persists and applies the selected locale with keyboard support and clear styling', async () => {
   const settings = await readFile(path.join(root,'site-settings.js'),'utf8');
   const css = await readFile(path.join(root,'enhancements.css'),'utf8');
-  assert.match(settings,/aria-label="Настройки языка" hidden/);
+  assert.match(settings,/aria-label="Настройки сайта" hidden/);
   assert.match(settings,/Язык интерфейса<select id="site-language"/);
   assert.match(settings,/if \(!\['ru','en'\]\.includes\(nextLanguage\)\) return/);
-  assert.match(settings,/try \{ localStorage\.setItem\(settingKey,JSON\.stringify\(preferences\)\); \} catch \{\}/);
+  assert.match(settings,/localStorage\.setItem\(settingKey,JSON\.stringify\(preferences\)\)/);
   assert.match(settings,/translateTree\(document\)/);
   assert.match(settings,/event\.key==='Escape'/);
   assert.match(settings,/'Язык интерфейса':'Interface language'/);
@@ -337,7 +362,7 @@ test('account avatar, empty startup state, and project form stay clean and respo
 
 test('personal library filters by current owner and favorites are saved and exposed in the profile', async () => {
   const lib=await readFile(path.join(root,'project-library.js'),'utf8'),catalog=await readFile(path.join(root,'project-catalog.js'),'utf8'),profile=await readFile(path.join(root,'account-settings.js'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8');
-  assert.match(lib,/ownerEmail \|\| ''\)\.toLowerCase\(\) === String\(sessionUser\.email/);assert.match(catalog,/buro-favorite-projects-v1/);assert.match(catalog,/data-favorite-id/);assert.match(profile,/favorite-startups-panel/);assert.match(profile,/account-tab-favorites/);assert.match(settings,/aria-hidden="true">文<\/span><\/button><section/);assert.doesNotMatch(settings,/site-preferences-caption|<b>Язык/);
+  assert.match(lib,/ownerEmail \|\| ''\)\.toLowerCase\(\) === String\(sessionUser\.email/);assert.match(catalog,/buro-favorite-projects-v1/);assert.match(catalog,/data-favorite-id/);assert.match(profile,/favorite-startups-panel/);assert.match(profile,/account-tab-favorites/);assert.match(settings,/site-preferences-button[^>]*aria-label="Открыть настройки сайта"[^>]*>[\s\S]*?<svg/);assert.doesNotMatch(settings,/site-preferences-caption|>文</);
 });
 
 test('public member profiles are read-only and expose only explicitly supplied contacts', async () => {
