@@ -132,6 +132,7 @@ test('site settings provide gear menu, saved accessibility modes, screen-reader 
   assert.match(css,/The settings trigger is now a standalone down-chevron/); assert.match(css,/border:0!important;border-radius:0!important;background:transparent!important/);
   assert.match(css,/\.site-preferences-button svg\{display:block;width:20px!important;height:20px!important/);
   assert.match(js,/id="access-low-vision"/); assert.match(js,/id="access-color-vision"/); assert.match(js,/id="access-blind-mode"/);
+  assert.match(js,/id="site-font-size"/); assert.match(js,/fontSize:100/); assert.match(js,/calc\(\$\{fontBaselines\.get\(element\)\}px \* var\(--site-font-scale/); assert.match(js,/fontSizeSelect\.addEventListener\('change'/); assert.match(js,/value="140">Очень большой/);
   assert.match(js,/preferences\.lowVision = lowVision\.checked/); assert.match(js,/preferences\.colorVision = colorVision\.checked/); assert.match(js,/preferences\.blindMode = blindMode\.checked/);
   assert.match(js,/speechSynthesis\.speak\(utterance\)/); assert.match(js,/speechSynthesis\?\.cancel\(\)/);
   assert.match(js,/accessibility-skip-link/); assert.match(js,/main\.tabIndex = -1/);
