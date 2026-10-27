@@ -482,3 +482,15 @@ html[data-site-theme="dark"] .form-extra[open] summary{color:#B3B2FF!important}
 .catalog-founder-link:hover,.project-owner-profile-link:hover{color:#14F195}
 @media(max-width:640px){.public-profile-card{padding:22px}.public-profile-head{align-items:flex-start;gap:16px}.public-profile-avatar{width:64px;height:64px;flex-basis:64px}}
 .investor-public-profile-link{color:inherit;text-decoration:none}.investor-public-profile-link:hover{color:#14F195}
+
+/* Friendlier tone: softer controls and clearer, more personal community cards. */
+html[data-site-theme="dark"] .community-section{border-radius:22px!important;border-color:#7F7F9930!important;background:radial-gradient(ellipse at 14% 8%,#706DFF12,transparent 42%),#101116!important}
+html[data-site-theme="dark"] .community-heading p{border-left:0!important;padding:0!important;color:#C4C3D7!important;line-height:1.75!important;max-width:450px}
+html[data-site-theme="dark"] .community-card{min-height:210px!important;padding:25px 22px!important;border-radius:15px!important;background:linear-gradient(145deg,#1D1D33aa,#101419dd)!important;border-color:#7F7F9938!important;box-shadow:none!important}
+html[data-site-theme="dark"] .community-card:hover{transform:translateY(-2px)!important;background:linear-gradient(145deg,#252541,#161923)!important;border-color:#B3B2FF77!important;box-shadow:0 12px 32px #0004!important}
+html[data-site-theme="dark"] .community-icon{display:grid!important;place-items:center;width:40px;height:40px;margin-bottom:15px;border-radius:12px;background:#706DFF1c;color:#B3B2FF!important;font-size:22px!important}
+html[data-site-theme="dark"] .community-card h3{margin:0 0 9px!important;font-size:17px!important;line-height:1.35!important}
+html[data-site-theme="dark"] .community-card p{font-size:13px!important;line-height:1.7!important;color:#C4C3D7!important}
+html[data-site-theme="dark"] :is(.button,.button-small,.project-form input,.project-form select,.project-form textarea,.site-preferences-button){border-radius:10px!important}
+html[data-site-theme="dark"] .button,.button-small{transition:transform .18s ease,background-color .18s ease,border-color .18s ease!important}
+@media(max-width:760px){html[data-site-theme="dark"] .community-section{border-radius:17px!important}html[data-site-theme="dark"] .community-card{min-height:0!important}}

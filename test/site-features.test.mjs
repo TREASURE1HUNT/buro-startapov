@@ -165,7 +165,7 @@ test('account profile separates settings and owned startups into neutral tabs', 
 
 test('homepage community block replaces washed-out project links with readable community cards', async () => {
   const home=await readFile(path.join(root,'index.html'),'utf8'),css=await readFile(path.join(root,'enhancements.css'),'utf8');
-  assert.match(home,/community-section/); assert.match(home,/Создавайте вместе с/); assert.match(home,/community-grid/); assert.match(home,/community-card/); assert.doesNotMatch(home,/Открыть ленту проектов|academy-module|Путь к/); assert.ok(home.indexOf('community-section')<home.indexOf('academy-proof'));
+  assert.match(home,/community-section/); assert.match(home,/Создавайте<br>не в одиночку/); assert.match(home,/community-grid/); assert.match(home,/community-card/); assert.doesNotMatch(home,/Открыть ленту проектов|academy-module|Путь к/); assert.ok(home.indexOf('community-section')<home.indexOf('academy-proof'));
   assert.match(css,/\.community-section[^}]*background:#0a0a0d!important/); assert.match(css,/\.community-card p\{[^}]*color:#b8b8c0!important/); assert.match(css,/@media\(max-width:760px\)\{\.community-section/);
 });
 
