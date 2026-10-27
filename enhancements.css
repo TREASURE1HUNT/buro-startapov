@@ -515,3 +515,10 @@ html[data-accessibility-color-vision="true"] .site-preferences-button{width:46px
 .site-preferences-button svg{width:23px!important;height:23px!important;stroke-width:2!important}
 .site-preferences-panel .accessibility-color-vision-option>span{display:grid;gap:4px}
 .site-preferences-panel .accessibility-option-hint{display:block;color:#D7E7F3;font-size:10px;line-height:1.45;font-weight:400}
+
+/* Harmonize every interface accent when color-vision mode is enabled. */
+html[data-accessibility-color-vision="true"]{--green:#56B4E9!important;--cyan:#0072B2!important;--purple:#E69F00!important;--orange:#D55E00!important;--brand-teal:#56B4E9!important;--brand-violet:#E69F00!important;--brand-surface:#1D2634!important;--brand-muted:#D7E7F3!important;--accent:#56B4E9!important;--capital-accent:#56B4E9!important}
+html[data-accessibility-color-vision="true"] body :is(a:not(.button),.nav a,.footer a,.login,.project-open-link,.library-open,.text-link,.arrow-link){color:#B8E5FA!important;text-decoration-color:#56B4E9!important}
+html[data-accessibility-color-vision="true"] body :is(.tag,.badge,.pill,.catalog-stage,.project-meta,.stage,.draft-tag,.category-label){border-color:#56B4E988!important;color:#D7E7F3!important}
+html[data-accessibility-color-vision="true"] body :is(.project-card,.catalog-project-card,.library-project-card,.leader-row,.leader-table-head,.method-item,.startup-info-grid article){border-color:#56B4E955!important}
+html[data-accessibility-color-vision="true"] body :is(.button,.button-small,.project-form button[type="submit"]):hover{background:#E69F00!important;color:#11131A!important;border-color:#FFFFFF!important}
