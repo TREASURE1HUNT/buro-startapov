@@ -6,11 +6,12 @@ const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-cont
 const reply = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), { status, headers: { ...headers, ...extra } });
 const hash = value => createHash('sha256').update(value).digest('hex');
 const emailOf = value => String(value || '').trim().toLowerCase();
-const cleanAccount = row => row && ({ name: row.name, email: row.email, role: row.role, ...(row.profile || {}), createdAt: row.created_at, emailVerified: Boolean(row.email_verified_at) });
+const cleanAccount = row => row && ({ name: row.name, email: row.email, role: row.role, ...(row.profile || {}), publicId: row.public_id, createdAt: row.created_at, emailVerified: Boolean(row.email_verified_at) });
+const publicProfile = row => row && ({ publicId: row.public_id, name: row.name, role: row.role, bio: row.profile?.bio || '', location: row.profile?.location || '', website: row.profile?.website || '', telegram: row.profile?.telegram || '', contactEmail: row.profile?.contactEmail || '', avatar: row.profile?.avatar || '' });
 function cookie(req) { return req.headers.get('cookie')?.split(';').map(part => part.trim()).find(part => part.startsWith('buro_session='))?.slice('buro_session='.length) || ''; }
 async function session(req) {
   const token = cookie(req); if (!token) return null;
-  const rows = await db.sql`SELECT a.email, a.name, a.role, a.profile, a.created_at, a.email_verified_at FROM app_sessions s JOIN app_accounts a ON a.email=s.email WHERE s.token_hash=${hash(token)} AND s.expires_at>now() AND a.email_verified_at IS NOT NULL LIMIT 1`;
+  const rows = await db.sql`SELECT a.email, a.name, a.role, a.profile, a.public_id, a.created_at, a.email_verified_at FROM app_sessions s JOIN app_accounts a ON a.email=s.email WHERE s.token_hash=${hash(token)} AND s.expires_at>now() AND a.email_verified_at IS NOT NULL LIMIT 1`;
   return rows[0] || null;
 }
 async function setSession(email) {
@@ -20,7 +21,7 @@ async function setSession(email) {
 }
 async function stateFor(email) {
   const [users, records, projects] = await Promise.all([
-    db.sql`SELECT email,name,role,profile,created_at,email_verified_at FROM app_accounts WHERE email=${email} LIMIT 1`,
+    db.sql`SELECT email,name,role,profile,public_id,created_at,email_verified_at FROM app_accounts WHERE email=${email} LIMIT 1`,
     db.sql`SELECT record_key,value FROM app_records WHERE owner_email=${email}`,
     db.sql`SELECT document FROM app_projects WHERE owner_email=${email}`,
   ]);
@@ -117,14 +118,27 @@ export default async function handler(req) {
   try {
     if (req.method === 'GET') {
       const action = url.searchParams.get('action') || '';
+      if (action === 'public-profile') {
+        const id = String(url.searchParams.get('id') || '');
+        if (!/^[a-f0-9]{32}$/i.test(id)) return reply({ error: 'Профиль не найден.' }, 404);
+        const rows = await db.sql`SELECT public_id,name,role,profile FROM app_accounts WHERE public_id=${id} LIMIT 1`;
+        return rows[0] ? reply({ profile: publicProfile(rows[0]) }) : reply({ error: 'Профиль не найден.' }, 404);
+      }
+      if (action === 'public-profiles') {
+        const role = String(url.searchParams.get('role') || '');
+        const rows = ['startup','investor','mentor'].includes(role)
+          ? await db.sql`SELECT public_id,name,role,profile FROM app_accounts WHERE role=${role} ORDER BY name LIMIT 200`
+          : await db.sql`SELECT public_id,name,role,profile FROM app_accounts ORDER BY name LIMIT 200`;
+        return reply({ profiles: rows.map(row => ({ ...publicProfile(row), ...(row.role === 'investor' ? { investorFocus: row.profile?.investorFocus || '', ticketSize: row.profile?.ticketSize || '' } : {}) })) });
+      }
       if (action === 'projects') {
         const [projects, votes] = await Promise.all([
-          db.sql`SELECT document FROM app_projects ORDER BY updated_at DESC`,
+          db.sql`SELECT p.document,a.public_id FROM app_projects p JOIN app_accounts a ON a.email=p.owner_email ORDER BY p.updated_at DESC`,
           db.sql`SELECT project_id, SUM(CASE WHEN vote='up' THEN 1 ELSE 0 END)::int AS up, SUM(CASE WHEN vote='down' THEN 1 ELSE 0 END)::int AS down FROM app_votes GROUP BY project_id`,
         ]);
-        return reply({ projects: projects.map(row => row.document), votes: Object.fromEntries(votes.map(row => [row.project_id, { up: row.up, down: row.down }])) });
+        return reply({ projects: projects.map(row => ({ ...row.document, ownerProfileId: row.public_id })), votes: Object.fromEntries(votes.map(row => [row.project_id, { up: row.up, down: row.down }])) });
       }
-      if (action === 'project') { const id=url.searchParams.get('id')||''; const rows=await db.sql`SELECT document FROM app_projects WHERE id=${id} LIMIT 1`; return rows[0]?reply({project:rows[0].document}):reply({error:'Проект не найден.'},404); }
+      if (action === 'project') { const id=url.searchParams.get('id')||''; const rows=await db.sql`SELECT p.document,a.public_id FROM app_projects p JOIN app_accounts a ON a.email=p.owner_email WHERE p.id=${id} LIMIT 1`; return rows[0]?reply({project:{...rows[0].document,ownerProfileId:rows[0].public_id}}):reply({error:'Проект не найден.'},404); }
       if (action === 'me' || action === 'state') { const who=await session(req); return who?reply(await stateFor(who.email)):reply({account:null},401); }
       if (action === 'records') { const who=await session(req); if(!who)return reply({error:'Войдите в аккаунт.'},401); const state=await stateFor(who.email); return reply({records:state.records}); }
       if (action === 'vote') { const projectId=url.searchParams.get('projectId')||'';const who=await session(req);if(!/^[\p{L}\p{N}_-]{1,100}$/u.test(projectId))return reply({error:'Некорректный проект.'},400);await importLegacyVotes(projectId);const rows=await db.sql`SELECT SUM(CASE WHEN vote='up' THEN 1 ELSE 0 END)::int AS up,SUM(CASE WHEN vote='down' THEN 1 ELSE 0 END)::int AS down FROM app_votes WHERE project_id=${projectId}`;const mine=who?await db.sql`SELECT vote FROM app_votes WHERE project_id=${projectId} AND voter_key=${hash(who.email)}`:[];return reply({up:rows[0]?.up||0,down:rows[0]?.down||0,myVote:mine[0]?.vote||null}); }
@@ -166,7 +180,7 @@ export default async function handler(req) {
       const identity = await firebaseIdentity(body.idToken);
       if (identity.error) return reply({ error: identity.error }, identity.error.includes('ещё не подключён') ? 503 : 401);
       if (identity.email !== emailOf(body.email) || !validDeviceId(body.deviceId)) return reply({ error: 'Сеанс или устройство не подтверждены.' }, 400);
-      const rows = await db.sql`SELECT email,name,role,profile,created_at,email_verified_at,firebase_uid FROM app_accounts WHERE email=${identity.email} LIMIT 1`;
+      const rows = await db.sql`SELECT email,name,role,profile,public_id,created_at,email_verified_at,firebase_uid FROM app_accounts WHERE email=${identity.email} LIMIT 1`;
       const user = rows[0];
       if (!user || user.firebase_uid !== identity.uid) return reply({ error: 'Профиль не найден. Завершите регистрацию через Firebase.' }, 404);
       if (!user.email_verified_at) {
@@ -255,7 +269,7 @@ export default async function handler(req) {
       const name=String(body.name||who.name).trim(),email=emailOf(body.email||who.email),role=['startup','investor','mentor'].includes(body.role)?body.role:who.role;const profile=body.profile&&typeof body.profile==='object'?body.profile:{};
       if(!email||!name)return reply({error:'Заполните имя и email.'},400);
       if(email!==who.email)return reply({error:'Смена email доступна после отдельного подтверждения нового адреса.'},409);
-      const rows=await db.sql`UPDATE app_accounts SET name=${name},role=${role},profile=${JSON.stringify(profile)}::jsonb,updated_at=now() WHERE email=${who.email} RETURNING email,name,role,profile,created_at,email_verified_at`;
+      const rows=await db.sql`UPDATE app_accounts SET name=${name},role=${role},profile=${JSON.stringify(profile)}::jsonb,updated_at=now() WHERE email=${who.email} RETURNING email,name,role,profile,public_id,created_at,email_verified_at`;
       if(!rows[0])return reply({error:'Аккаунт не найден.'},404);
       await db.sql`UPDATE app_projects SET document=jsonb_set(jsonb_set(document,'{ownerEmail}',to_jsonb(${email}::text)),'{ownerName}',to_jsonb(${name}::text)),updated_at=now() WHERE owner_email=${email}`;
       return reply({account:cleanAccount(rows[0])});

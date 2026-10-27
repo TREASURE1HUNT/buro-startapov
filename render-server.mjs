@@ -21,7 +21,7 @@ async function migrate() {
     await client.query('BEGIN');
     await client.query("SELECT pg_advisory_xact_lock(hashtext('buro-startapov-migrations'))");
     await client.query('CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())');
-    for (const version of ['0001_core', '0002_analytics', '0003_unicornbase_seed', '0004_email_auth', '0005_visitor_analytics', '0006_firebase_auth']) {
+    for (const version of ['0001_core', '0002_analytics', '0003_unicornbase_seed', '0004_email_auth', '0005_visitor_analytics', '0006_firebase_auth', '0007_public_profiles']) {
       const applied = await client.query('SELECT version FROM schema_migrations WHERE version=$1', [version]);
       if (!applied.rows.length) {
         const sql = await readFile(path.join(root, `netlify/database/migrations/${version}/migration.sql`), 'utf8');

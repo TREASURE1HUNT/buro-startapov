@@ -49,3 +49,12 @@ services:
         value: "22"
       - key: ADMIN_API_TOKEN
         sync: false
+      - key: SITE_API_URL
+        value: https://buro-startapov-api.onrender.com/health
+      - key: INFERENCE_API_KEY
+        fromService:
+          name: buro-startapov-api
+          type: web
+          envVarKey: INFERENCE_API_KEY
+      - key: INFERENCE_BASE_URL
+        value: https://inference.dahl.global/v1

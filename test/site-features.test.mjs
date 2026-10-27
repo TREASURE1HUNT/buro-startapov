@@ -334,3 +334,15 @@ test('personal library filters by current owner and favorites are saved and expo
   const lib=await readFile(path.join(root,'project-library.js'),'utf8'),catalog=await readFile(path.join(root,'project-catalog.js'),'utf8'),profile=await readFile(path.join(root,'account-settings.js'),'utf8'),settings=await readFile(path.join(root,'site-settings.js'),'utf8');
   assert.match(lib,/ownerEmail \|\| ''\)\.toLowerCase\(\) === String\(sessionUser\.email/);assert.match(catalog,/buro-favorite-projects-v1/);assert.match(catalog,/data-favorite-id/);assert.match(profile,/favorite-startups-panel/);assert.match(profile,/account-tab-favorites/);assert.match(settings,/aria-hidden="true">文<\/span><\/button><section/);assert.doesNotMatch(settings,/site-preferences-caption|<b>Язык/);
 });
+
+test('public member profiles are read-only and expose only explicitly supplied contacts', async () => {
+  const db=await readFile(path.join(root,'.netlify/functions/database.mjs'),'utf8'),settings=await readFile(path.join(root,'account-settings.js'),'utf8'),view=await readFile(path.join(root,'public-profile.js'),'utf8'),html=await readFile(path.join(root,'public-profile.html'),'utf8'),project=await readFile(path.join(root,'project-page.js'),'utf8'),catalog=await readFile(path.join(root,'project-catalog.js'),'utf8'),migration=await readFile(path.join(root,'netlify/database/migrations/0007_public_profiles/migration.sql'),'utf8');
+  assert.match(db,/action === 'public-profile'/);assert.match(db,/action === 'public-profiles'/);assert.match(db,/profile\?\.contactEmail/);assert.match(db,/publicId: row\.public_id/);assert.match(db,/ownerProfileId: row\.public_id/);assert.match(migration,/ADD COLUMN IF NOT EXISTS public_id TEXT/);
+  assert.match(settings,/name="telegram"/);assert.match(settings,/name="contactEmail"/);assert.match(settings,/Почта для входа скрыта/);assert.match(view,/target="_blank" rel="noopener noreferrer"/);assert.doesNotMatch(view,/profile\.email/);assert.match(html,/public-profile.js/);assert.match(project,/public-profile\.html\?id=/);assert.match(catalog,/public-profile\.html\?id=/);
+  assert.doesNotMatch(project,/field-hint">\$\{escapeHtml\(project\.contactEmail\)\}/);
+});
+
+test('admin uses site colors and can wake API, database, and AI without generating tokens', async () => {
+  const html=await readFile(path.join(root,'admin/index.html'),'utf8'),app=await readFile(path.join(root,'admin/app.js'),'utf8'),server=await readFile(path.join(root,'render/admin-server.mjs'),'utf8'),css=await readFile(path.join(root,'admin/styles.css'),'utf8'),config=await readFile(path.join(root,'render.yaml'),'utf8');
+  assert.match(html,/wake-all/);assert.match(html,/data-wake="ai"/);assert.match(app,/api\/admin\/wake/);assert.match(server,/SELECT 1/);assert.match(server,/inference\.dahl\.global/);assert.match(server,/\/models/);assert.doesNotMatch(server,/chat\/completions/);assert.match(css,/--bg:#09090F/);assert.match(css,/--lime:#14F195/);assert.match(config,/INFERENCE_API_KEY/);
+});

@@ -63,6 +63,15 @@
     $('#daily-chart').innerHTML = daily.map(d=>{const values=[d.views,d.visitors,d.signups,d.votes,d.ai_evaluations];return `<div class="bar-day" title="${d.day} · просмотры ${values[0]}, уникальные браузеры ${values[1]}, регистрации ${values[2]}, голоса ${values[3]}, ИИ ${values[4]}">${values.map(value=>`<i style="height:${Math.max(value?2:0,Number(value)/peak*100)}%"></i>`).join('')}</div>`;}).join('')||'<span class="hint">Нет событий за выбранный период.</span>';
     $('#popular').innerHTML = (data.popular||[]).map(row=>`<div class="popular-row"><span>${esc(row.project_id)}</span><small>${Number(row.views)} ПРОСМ.</small></div>`).join('') || '<p class="hint">Пока нет просмотров страниц стартапов.</p>';
   }
+  async function wake(target) {
+    const output=$('#wake-status');output.textContent='Подключаемся к сервисам…';output.dataset.state='loading';
+    try {
+      const result=await api('/api/admin/wake',{method:'POST',body:JSON.stringify({target})});
+      const labels={api:'API сайта',database:'База данных',ai:'ИИ'};
+      output.innerHTML=Object.entries(result.services||{}).map(([key,status])=>`<span class="wake-result ${status.ok?'is-ok':'is-error'}"><b>${esc(labels[key]||key)}:</b> ${esc(status.message|| (status.ok?'работает':'ошибка'))}</span>`).join(' ');
+      output.dataset.state=Object.values(result.services||{}).every(status=>status.ok)?'success':'error';
+    } catch(error){output.textContent=error.message;output.dataset.state='error';}
+  }
   async function boot() {
     try { const state = await api('/api/admin/session'); if (state.authenticated) { showApp(true); const {tables}=await api('/api/admin/tables'); tableSelect.innerHTML=tables.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join(''); await Promise.all([loadMetrics(),loadTable()]); } else showApp(false); }
     catch { showApp(false); }
@@ -72,5 +81,7 @@
   const today=new Date(),monthAgo=new Date(today);monthAgo.setDate(today.getDate()-29);const dateValue=date=>date.toISOString().slice(0,10);toInput.value=dateValue(today);fromInput.value=dateValue(monthAgo);$('#analytics-apply').addEventListener('click',()=>loadMetrics().catch(error=>alert(error.message)));
   tableSelect.addEventListener('change',loadTable); tableSearch.addEventListener('input',renderTable);
   document.querySelectorAll('.refresh').forEach(button=>button.addEventListener('click',()=>button.dataset.refresh==='metrics'?loadMetrics():loadTable()));
+  $('#wake-all').addEventListener('click',()=>wake('all'));
+  document.querySelectorAll('[data-wake]').forEach(button=>button.addEventListener('click',()=>wake(button.dataset.wake)));
   boot();
 })();

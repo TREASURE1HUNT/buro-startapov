@@ -39,6 +39,20 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'POST' && url.pathname === '/api/admin/logout') { const token = cookie(req); if (token) sessions.delete(hash(token)); return send(res, 200, { ok: true }, { 'set-cookie': 'buro_admin=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0' }); }
   if (req.method === 'GET' && url.pathname === '/api/admin/session') return send(res, 200, { authenticated: authed(req) });
+  if (req.method === 'POST' && url.pathname === '/api/admin/wake') {
+    if (!authed(req)) return send(res, 401, { error: 'Войдите в панель администратора.' });
+    const input=await body(req),target=['api','database','ai','all'].includes(input.target)?input.target:'all';
+    const services={};
+    const timeout=()=>AbortSignal.timeout(15000);
+    if(target==='all'||target==='database')try{await pool.query('SELECT 1');services.database={ok:true,message:'подключена'};}catch(error){services.database={ok:false,message:`ошибка соединения: ${error.code||'DB'}`};}
+    if(target==='all'||target==='api')try{const response=await fetch(process.env.SITE_API_URL||'https://buro-startapov-api.onrender.com/health',{signal:timeout(),cache:'no-store'});services.api={ok:response.ok,message:response.ok?'отвечает и прогрет':'ответил HTTP '+response.status};}catch(error){services.api={ok:false,message:error.name==='TimeoutError'?'тайм-аут при запуске':'не отвечает'};}
+    if(target==='all'||target==='ai'){
+      const key=process.env.INFERENCE_API_KEY||process.env.OPENAI_API_KEY,base=(process.env.INFERENCE_BASE_URL||((key?.startsWith('dahl_'))?'https://inference.dahl.global/v1':'https://api.openai.com/v1')).replace(/\/$/,'');
+      if(!key)services.ai={ok:false,message:'ключ ИИ не настроен на Render'};
+      else try{const response=await fetch(base+'/models',{headers:{authorization:`Bearer ${key}`},signal:timeout(),cache:'no-store'});services.ai={ok:response.ok,message:response.ok?'API ИИ доступен':'API ИИ ответил HTTP '+response.status};}catch(error){services.ai={ok:false,message:error.name==='TimeoutError'?'тайм-аут при запуске':'API ИИ не отвечает'};}
+    }
+    return send(res,200,{services});
+  }
   if (url.pathname.startsWith('/api/admin/')) {
     if (!authed(req)) return send(res, 401, { error: 'Войдите в панель администратора.' });
     try {
