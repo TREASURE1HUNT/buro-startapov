@@ -10,6 +10,8 @@
   const settingKey = 'buro-site-preferences-v1';
   let preferences = { language:'ru', lowVision:false, colorVision:false, blindMode:false, fontSize:100, voiceAssistant:false, voiceOutput:false, voiceboxUrl:'http://127.0.0.1:8000', voiceProfileId:'' };
   try { preferences = { ...preferences, ...JSON.parse(localStorage.getItem(settingKey) || '{}') }; } catch {}
+  // Once a personal Voicebox profile exists, make it the assistant's default voice.
+  if (preferences.voiceProfileId) { preferences.voiceAssistant = true; preferences.voiceOutput = true; try { localStorage.setItem(settingKey, JSON.stringify(preferences)); } catch {} }
   const fontScaleValue = value => [100,112,125,140].includes(Number(value)) ? Number(value) : 100;
   let activeFontScale = fontScaleValue(preferences.fontSize) / 100;
   function scaleText(root = document.body) {

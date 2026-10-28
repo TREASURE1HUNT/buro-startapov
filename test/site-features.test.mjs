@@ -398,7 +398,7 @@ test('role guide is linked from the footer and served as a PDF', async () => {
 
 test('voice assistant is configurable in settings and uses local Voicebox only for opted-in speech', async () => {
   const settings=await readFile(path.join(root,'site-settings.js'),'utf8'),chat=await readFile(path.join(root,'support-chat.js'),'utf8'),server=await readFile(path.join(root,'server.js'),'utf8');
-  assert.match(settings,/voice-assistant-toggle/);assert.match(settings,/preferences\.voiceOutput=preferences\.voiceAssistant/);assert.match(settings,/voicebox-create-profile/);assert.match(settings,/profiles\/\$\{encodeURIComponent\(profile\.id\)\}\/samples/);assert.match(settings,/localStorage\.setItem\(settingKey/);
+  assert.match(settings,/voice-assistant-toggle/);assert.match(settings,/preferences\.voiceOutput=preferences\.voiceAssistant/);assert.match(settings,/if \(preferences\.voiceProfileId\) \{ preferences\.voiceAssistant = true; preferences\.voiceOutput = true;/);assert.match(settings,/voicebox-create-profile/);assert.match(settings,/profiles\/\$\{encodeURIComponent\(profile\.id\)\}\/samples/);assert.match(settings,/localStorage\.setItem\(settingKey/);
   assert.match(chat,/window\.webkitSpeechRecognition/);assert.match(chat,/v1\/audio\/speech/);assert.match(chat,/voicePrefs\.voiceOutput/);
   assert.match(server,/Отвечай только на вопросы о функциях и содержимом этого сайта/);
 });
