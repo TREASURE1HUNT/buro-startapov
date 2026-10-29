@@ -13,7 +13,7 @@ $env:INFERENCE_MODEL="MiniMaxAI/MiniMax-M2.7"
 node server.js
 ```
 
-Затем открывайте сайт по адресу http://localhost:4173 (не через file://). Ключ остаётся в переменной окружения сервера и не отправляется в браузер. /api/health показывает конфигурацию; /api/evaluate анализирует стартап; /api/support отвечает на вопросы; /api/register и /api/login создают и находят аккаунты. Пользовательский профиль доступен по /profile.html после регистрации/входа.
+Затем открывайте сайт по адресу http://localhost:4173 (не через file://). Ключ остаётся в переменной окружения сервера и не отправляется в браузер. /api/health показывает конфигурацию; /api/evaluate анализирует стартап; /api/register и /api/login создают и находят аккаунты. Пользовательский профиль доступен по /profile.html после регистрации/входа.
 
 Сервер использует встроенные модули Node.js, отдельная установка npm-пакетов не нужна. Аккаунты сохраняются в data.json, пароли защищены scrypt-хешем. Перед публичным развертыванием следует добавить надёжные сессии и CSRF-защиту, ограничение частоты запросов, модерацию голосов и резервное копирование.
 
@@ -25,7 +25,7 @@ node server.js
 
 ## Netlify
 
-Repository settings in Netlify: **Add new site → Import an existing project → GitHub → TREASURE1HUNT/buro-startapov**. Build command can stay empty; publish directory is `.` from `netlify.toml`. Add environment variables `INFERENCE_BASE_URL=https://inference.dahl.global/v1`, `INFERENCE_MODEL=MiniMaxAI/MiniMax-M2.7`, and `INFERENCE_API_KEY` in the Netlify dashboard, then deploy. Never put the actual key in Git or frontend code. The Netlify functions power AI analysis and chat. The local Node API also supports registration/login; persistent accounts on Netlify need an external database/auth provider, while the current browser-only demo profile is not synchronized across devices.
+Repository settings in Netlify: **Add new site → Import an existing project → GitHub → TREASURE1HUNT/buro-startapov**. Build command can stay empty; publish directory is `.` from `netlify.toml`. Add environment variables `INFERENCE_BASE_URL=https://inference.dahl.global/v1`, `INFERENCE_MODEL=MiniMaxAI/MiniMax-M2.7`, and `INFERENCE_API_KEY` in the Netlify dashboard, then deploy. Never put the actual key in Git or frontend code. The Netlify functions power AI analysis. The local Node API also supports registration/login; persistent accounts on Netlify need an external database/auth provider, while the current browser-only demo profile is not synchronized across devices.
 # Хранилище сайта — Render Postgres
 
 Render Postgres и Web Service описаны в `render.yaml`. `render-server.mjs` применяет версии миграций при старте. Postgres хранит аккаунты/сессии, проекты с медиа, голоса, пользовательские записи, аналитику и импортированные карточки стартапов. `DATABASE_URL` берётся из внутреннего соединения Render и остаётся только на сервере.

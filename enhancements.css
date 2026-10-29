@@ -413,8 +413,6 @@ html[data-site-theme="dark"] .ranking-showcase .showcase-art{outline:1px solid #
 .site-preferences-panel .accessibility-option input{width:18px;height:18px;margin:0;accent-color:#706DFF}
 .accessibility-status{min-height:1em;margin:10px 0 0;color:#C4C3D7!important;font:11px/1.5 Manrope,Arial,sans-serif!important}
 .accessibility-help{margin:10px 0 0;color:#C4C3D7!important;font:10px/1.5 Manrope,Arial,sans-serif!important}
-.accessibility-skip-link{position:fixed;z-index:2000;top:8px;left:8px;transform:translateY(-160%);padding:12px 16px;border:2px solid #B3B2FF;border-radius:4px;background:#1D1D33;color:#fff;font:700 14px/1.4 Manrope,Arial,sans-serif;text-decoration:underline}
-.accessibility-skip-link:focus{transform:translateY(0);outline:3px solid #fff;outline-offset:2px}
 html[data-accessibility-low-vision="true"]{scroll-padding-top:100px}
 html[data-accessibility-low-vision="true"] body{line-height:1.65!important;letter-spacing:.01em}
 html[data-accessibility-low-vision="true"] body :is(p,li,label,button,a,input,textarea,select,small,.section-index,.project-meta,.field-hint){line-height:1.65!important}

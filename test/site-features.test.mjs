@@ -10,7 +10,6 @@ process.env.INFERENCE_BASE_URL = 'https://inference.example.test/v1';
 process.env.INFERENCE_MODEL = 'test-model';
 const { default: evaluate } = await import('../.netlify/functions/evaluate.mjs');
 const { default: translate } = await import('../.netlify/functions/translate.mjs');
-const { default: support } = await import('../.netlify/functions/support.mjs');
 
 test('startup content translation preserves item order and validates bounded input', async () => {
   globalThis.fetch = async (url, options) => { assert.equal(url,'https://inference.example.test/v1/chat/completions'); return new Response(JSON.stringify({ choices:[{message:{content:'<think>Translate carefully.</think>\n["A useful product description", "A customer problem"]'}}] }), {status:200}); };
@@ -93,12 +92,6 @@ test('AI evaluator extracts valid JSON when a model wraps it in a thinking block
   assert.equal(response.status,200); assert.equal((await response.json()).score,70);
 });
 
-test('AI support strips internal thinking blocks from user-facing answers', async () => {
-  globalThis.fetch=async()=>new Response(JSON.stringify({choices:[{message:{content:'<think>Private reasoning.</think>Вот краткий ответ.'}}]}),{status:200});
-  const response=await support(new Request('https://site.test/api/support',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message:'Что дальше?'})}));
-  assert.equal(response.status,200); assert.equal((await response.json()).answer,'Вот краткий ответ.');
-});
-
 test('AI evaluator validates required fields before contacting the model', async () => {
   const response = await evaluate(new Request('https://site.test/api/evaluate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:'Тест'})}));
   assert.equal(response.status,400);
@@ -123,25 +116,18 @@ test('site settings include persistent RU/EN language control and the dark ocean
   assert.match(js,/page_view/); assert.match(js,/project_view/); assert.match(html,/site-settings\.css/); assert.match(html,/site-settings\.js/);
 });
 
-test('site settings provide gear menu, saved accessibility modes, screen-reader skip link and narration', async () => {
+test('site settings provide persistent visual accessibility controls, font size, and no voice/keyboard modes', async () => {
   const js=await readFile(path.join(root,'site-settings.js'),'utf8');
   const css=await readFile(path.join(root,'enhancements.css'),'utf8');
   assert.match(js,/site-preferences-button[^>]*aria-label="Открыть настройки сайта"/);
-  assert.match(js,/<svg viewBox="0 0 24 24"[^>]*aria-hidden="true"/);
-  assert.match(js,/<path d="M6 9l6 6 6-6"\/><\/svg>/); assert.doesNotMatch(js,/m19\.4 13\.5/);
-  assert.match(css,/The settings trigger is now a standalone down-chevron/); assert.match(css,/border:0!important;border-radius:0!important;background:transparent!important/);
-  assert.match(css,/\.site-preferences-button svg\{display:block;width:20px!important;height:20px!important/);
-  assert.match(js,/id="access-low-vision"/); assert.match(js,/id="access-color-vision"/); assert.match(js,/id="access-blind-mode"/);
-  assert.match(js,/id="site-font-size"/); assert.match(js,/fontSize:100/); assert.match(js,/calc\(\$\{fontBaselines\.get\(element\)\}px \* var\(--site-font-scale/); assert.match(js,/fontSizeSelect\.addEventListener\('change'/); assert.match(js,/value="140">Очень большой/);
-  assert.match(js,/preferences\.lowVision = lowVision\.checked/); assert.match(js,/preferences\.colorVision = colorVision\.checked/); assert.match(js,/preferences\.blindMode = blindMode\.checked/);
-  assert.doesNotMatch(js,/Озвучивание страницы|accessibility-speech-controls|speakButton|speechSynthesis/);
-  assert.match(js,/accessibility-skip-link/); assert.match(js,/main\.tabIndex = -1/);
-  assert.match(css,/data-accessibility-low-vision="true"/); assert.match(css,/data-accessibility-color-vision="true"/); assert.match(css,/data-screen-reader-assist="true"/);
-  assert.match(css,/--cv-blue:#56B4E9/); assert.match(css,/repeating-linear-gradient\(135deg,var\(--cv-blue\)/); assert.match(css,/favorite-toggle\.is-favorite\{color:var\(--cv-orange\)/);
-  assert.match(js,/accessibility-option-hint/);
-  assert.match(css,/Full-site color-vision theme/); assert.match(css,/body\{background:#081A2B!important/); assert.match(css,/\.projects-section,\.community-section,\.academy-proof/); assert.match(css,/body :is\(input,textarea,select/);
-  const translations=await readFile(path.join(root,'translations-en.js'),'utf8'); assert.match(translations,/Uses distinct colors and icons to communicate status/);
-  assert.match(css,/\.accessibility-skip-link:focus/); assert.doesNotMatch(css,/accessibility-speech-controls/);
+  assert.match(js,/<path d="M6 9l6 6 6-6"\/><\/svg>/);
+  assert.match(js,/id="access-low-vision"/); assert.match(js,/id="access-color-vision"/); assert.match(js,/id="site-font-size"/);
+  assert.match(js,/fontSizeSelect\.addEventListener\('change'/); assert.match(js,/value="140">Очень большой/);
+  assert.match(js,/preferences\.lowVision = lowVision\.checked/); assert.match(js,/preferences\.colorVision = colorVision\.checked/);
+  assert.doesNotMatch(js,/voice-assistant|voicebox|voiceOutput|screenReaderAssist|access-blind-mode|blindMode|Улучшенная клавиатурная навигация|accessibility-skip-link|speechSynthesis/);
+  assert.match(css,/data-accessibility-low-vision="true"/); assert.match(css,/data-accessibility-color-vision="true"/);
+  assert.match(css,/--cv-blue:#56B4E9/); assert.match(css,/repeating-linear-gradient\(135deg,var\(--cv-blue\)/);
+  assert.doesNotMatch(css,/accessibility-skip-link|accessibility-speech-controls/);
 });
 
 test('startup creation and AI review actions use clear, keyboard-visible button styles', async () => {
@@ -239,12 +225,9 @@ test('startup media ordering rerenders cards and README markdown uses a sanitize
   assert.match(projectHtml,/vendor\/marked\.umd\.js/); assert.match(projectHtml,/vendor\/purify\.min\.js/);
 });
 
-test('Render serves support requests through the deployed language-aware handler', async () => {
-  const server=await readFile(path.join(root,'render-server.mjs'),'utf8');
-  const support=await readFile(path.join(root,'.netlify/functions/support.mjs'),'utf8');
-  assert.match(server,/import supportHandler from '\.\/\.netlify\/functions\/support\.mjs'/);
-  assert.match(server,/if \(url\.pathname === '\/api\/support'\)[\s\S]*?supportHandler\(/);
-  assert.match(support,/payload\.language === 'en'/);
+test('voice assistant, chat widget, and custom keyboard-navigation mode are removed', async () => {
+ const settings=await readFile(path.join(root,'site-settings.js'),'utf8'),script=await readFile(path.join(root,'script.js'),'utf8'),render=await readFile(path.join(root,'render-server.mjs'),'utf8'),local=await readFile(path.join(root,'server.js'),'utf8'),config=await readFile(path.join(root,'netlify.toml'),'utf8');
+ assert.doesNotMatch(settings,/voice-assistant|voicebox|voiceOutput|screenReaderAssist|access-blind-mode|Улучшенная клавиатурная навигация|accessibility-skip-link/); assert.doesNotMatch(script,/Поддержка ИИ|support-launch|support-panel|api\/support/); assert.doesNotMatch(render,/api\/support|supportHandler/); assert.doesNotMatch(local,/api\/support|Поддержка ИИ/); assert.doesNotMatch(config,/api\/support/);
 });
 
 test('English dictionary covers Russian strings rendered in the page templates', async () => {
@@ -396,9 +379,7 @@ test('role guide is linked from the footer and served as a PDF', async () => {
   assert.match(server,/\.pdf': 'application\/pdf'/); assert.equal(pdf.subarray(0,5).toString(),'%PDF-');
 });
 
-test('voice assistant is configurable in settings and uses local Voicebox only for opted-in speech', async () => {
-  const settings=await readFile(path.join(root,'site-settings.js'),'utf8'),chat=await readFile(path.join(root,'support-chat.js'),'utf8'),server=await readFile(path.join(root,'server.js'),'utf8');
-  assert.match(settings,/voice-assistant-toggle/);assert.match(settings,/preferences\.voiceOutput=preferences\.voiceAssistant/);assert.match(settings,/if \(preferences\.voiceProfileId\) \{ preferences\.voiceAssistant = true; preferences\.voiceOutput = true;/);assert.match(settings,/voicebox-create-profile/);assert.match(settings,/profiles\/\$\{encodeURIComponent\(profile\.id\)\}\/samples/);assert.match(settings,/localStorage\.setItem\(settingKey/);
-  assert.match(chat,/window\.webkitSpeechRecognition/);assert.match(chat,/v1\/audio\/speech/);assert.match(chat,/voicePrefs\.voiceOutput/);assert.match(chat,/Обычный голос браузера не подменяю/);
-  assert.match(server,/Отвечай только на вопросы о функциях и содержимом этого сайта/);
+test('assistant implementations are absent after feature removal', async () => {
+ const files=await Promise.all(['site-settings.js','script.js','render-server.mjs','server.js'].map(name=>readFile(path.join(root,name),'utf8')));
+ for(const file of files) assert.doesNotMatch(file,/voice-assistant-toggle|voicebox-create-profile|window\.webkitSpeechRecognition|speechSynthesis|api\/support|Поддержка ИИ/);
 });

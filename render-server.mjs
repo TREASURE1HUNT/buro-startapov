@@ -5,7 +5,6 @@ import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 import handler from './.netlify/functions/database.mjs';
 import evaluateHandler from './.netlify/functions/evaluate.mjs';
-import supportHandler from './.netlify/functions/support.mjs';
 import translateHandler from './.netlify/functions/translate.mjs';
 import { closeDatabase, getDatabase } from './render/postgres-adapter.mjs';
 
@@ -65,14 +64,6 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(response.status, Object.fromEntries(response.headers));
       return res.end(Buffer.from(await response.arrayBuffer()));
     } catch (error) { console.error('AI evaluation failed:', error); res.writeHead(502, { 'content-type': 'application/json' }); return res.end('{"error":"Не удалось выполнить анализ стартапа."}'); }
-  }
-  if (url.pathname === '/api/support') {
-    try {
-      const chunks = []; for await (const chunk of req) chunks.push(chunk);
-      const response = await supportHandler(new Request(`https://${req.headers.host || 'localhost'}${req.url}`, { method: req.method, headers: req.headers, body: Buffer.concat(chunks), duplex: 'half' }));
-      res.writeHead(response.status, Object.fromEntries(response.headers));
-      return res.end(Buffer.from(await response.arrayBuffer()));
-    } catch (error) { console.error('Support handler failed:', error); res.writeHead(502, { 'content-type': 'application/json' }); return res.end('{"error":"AI support is temporarily unavailable."}'); }
   }
   if (url.pathname === '/api/translate') {
     try {
