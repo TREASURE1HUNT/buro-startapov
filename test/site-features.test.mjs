@@ -134,14 +134,14 @@ test('site settings provide gear menu, saved accessibility modes, screen-reader 
   assert.match(js,/id="access-low-vision"/); assert.match(js,/id="access-color-vision"/); assert.match(js,/id="access-blind-mode"/);
   assert.match(js,/id="site-font-size"/); assert.match(js,/fontSize:100/); assert.match(js,/calc\(\$\{fontBaselines\.get\(element\)\}px \* var\(--site-font-scale/); assert.match(js,/fontSizeSelect\.addEventListener\('change'/); assert.match(js,/value="140">Очень большой/);
   assert.match(js,/preferences\.lowVision = lowVision\.checked/); assert.match(js,/preferences\.colorVision = colorVision\.checked/); assert.match(js,/preferences\.blindMode = blindMode\.checked/);
-  assert.match(js,/speechSynthesis\.speak\(utterance\)/); assert.match(js,/speechSynthesis\?\.cancel\(\)/);
+  assert.doesNotMatch(js,/Озвучивание страницы|accessibility-speech-controls|speakButton|speechSynthesis/);
   assert.match(js,/accessibility-skip-link/); assert.match(js,/main\.tabIndex = -1/);
   assert.match(css,/data-accessibility-low-vision="true"/); assert.match(css,/data-accessibility-color-vision="true"/); assert.match(css,/data-screen-reader-assist="true"/);
   assert.match(css,/--cv-blue:#56B4E9/); assert.match(css,/repeating-linear-gradient\(135deg,var\(--cv-blue\)/); assert.match(css,/favorite-toggle\.is-favorite\{color:var\(--cv-orange\)/);
   assert.match(js,/accessibility-option-hint/);
   assert.match(css,/Full-site color-vision theme/); assert.match(css,/body\{background:#081A2B!important/); assert.match(css,/\.projects-section,\.community-section,\.academy-proof/); assert.match(css,/body :is\(input,textarea,select/);
   const translations=await readFile(path.join(root,'translations-en.js'),'utf8'); assert.match(translations,/Uses distinct colors and icons to communicate status/);
-  assert.match(css,/\.accessibility-skip-link:focus/); assert.match(css,/\.accessibility-speech-controls/);
+  assert.match(css,/\.accessibility-skip-link:focus/); assert.doesNotMatch(css,/accessibility-speech-controls/);
 });
 
 test('startup creation and AI review actions use clear, keyboard-visible button styles', async () => {
@@ -391,8 +391,8 @@ test('admin uses site colors and can wake API, database, and AI without generati
 });
 
 test('role guide is linked from the footer and served as a PDF', async () => {
-  const settings=await readFile(path.join(root,'site-settings.js'),'utf8'), server=await readFile(path.join(root,'render-server.mjs'),'utf8'), pdf=await readFile(path.join(root,'output/pdf/user-guide.pdf'));
-  assert.match(settings,/user-guide\.pdf/); assert.match(settings,/Руководство пользователя/);
+  const settings=await readFile(path.join(root,'site-settings.js'),'utf8'), server=await readFile(path.join(root,'render-server.mjs'),'utf8'), css=await readFile(path.join(root,'site-settings.css'),'utf8'), pdf=await readFile(path.join(root,'output/pdf/user-guide.pdf'));
+  assert.match(settings,/user-guide\.pdf/); assert.match(settings,/Руководство пользователя/);assert.match(settings,/button user-guide-link/);assert.match(css,/\.user-guide-link\{[^}]*linear-gradient\(110deg,#706DFF,#9281CC\)/);
   assert.match(server,/\.pdf': 'application\/pdf'/); assert.equal(pdf.subarray(0,5).toString(),'%PDF-');
 });
 

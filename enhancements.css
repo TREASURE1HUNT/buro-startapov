@@ -411,9 +411,6 @@ html[data-site-theme="dark"] .ranking-showcase .showcase-art{outline:1px solid #
 .site-preferences-panel .accessibility-options legend{padding:0 0 8px;color:#C4C3D7;font:600 12px/1.4 Manrope,Arial,sans-serif}
 .site-preferences-panel .accessibility-options .accessibility-option{display:grid!important;grid-template-columns:20px 1fr;align-items:start;gap:9px!important;margin:0!important;color:#fff!important;font:500 12px/1.5 Manrope,Arial,sans-serif!important;cursor:pointer}
 .site-preferences-panel .accessibility-option input{width:18px;height:18px;margin:0;accent-color:#706DFF}
-.accessibility-speech-controls{display:grid;gap:8px;margin-top:14px}.accessibility-speech-controls[hidden]{display:none!important}
-.accessibility-speech-controls button{min-height:40px;padding:9px 11px;border:1px solid #8281CC;border-radius:5px;background:#35354D;color:#fff;font:600 11px/1.4 Manrope,Arial,sans-serif;cursor:pointer}
-.accessibility-speech-controls button:hover{background:#4F4F66}.accessibility-speech-controls button:disabled{opacity:.55;cursor:not-allowed}
 .accessibility-status{min-height:1em;margin:10px 0 0;color:#C4C3D7!important;font:11px/1.5 Manrope,Arial,sans-serif!important}
 .accessibility-help{margin:10px 0 0;color:#C4C3D7!important;font:10px/1.5 Manrope,Arial,sans-serif!important}
 .accessibility-skip-link{position:fixed;z-index:2000;top:8px;left:8px;transform:translateY(-160%);padding:12px 16px;border:2px solid #B3B2FF;border-radius:4px;background:#1D1D33;color:#fff;font:700 14px/1.4 Manrope,Arial,sans-serif;text-decoration:underline}
